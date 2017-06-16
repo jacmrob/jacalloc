@@ -16,10 +16,11 @@ services:
       POSTGRES_URL: 'postgresql://jacalloc:jacalloc123@postgres:5432/jacalloc'
       PYTHONUNBUFFERED: 0
     volumes:
-      - ./startup.sh:/etc/startup.sh
+      - ./startup.sh:/app/startup.sh
       - ./app:/app
     depends_on:
       - postgres
     links:
       - postgres:postgres
-    entrypoint: ["sh", "/etc/startup.sh"]
+    working_dir: /app
+    entrypoint: ["./startup.sh"]

@@ -1,23 +1,26 @@
-from app import db
-from sqlalchemy.dialects.postgresql import JSON
+#from app import db
+from flask.ext.sqlalchemy import SQLAlchemy
+
+db = SQLAlchemy()
+
 
 class BaseModel(db.Model):
     __abstract__ = True
 
-class Allocations(BaseModel):
-    """Model for allocations table"""
-    __tablename__ = 'allocations'
+class Resource(BaseModel):
+    """Model for resources table"""
+    __tablename__ = 'resources'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     ip = db.Column(db.String)
-    free = db.Column(db.Boolean)
+    in_use = db.Column(db.Boolean)
 
-    # def __init__(self, url):
-    #     self.url = url
-    #     self.name = ""
-    #     self.ip = ""
-    #     self.alloc = False
-    #
-    # def __repr__(self):
-    #     return '<id {}>'.format(self.id)
+    def __init__(self, name, ip, in_use):
+        self.name = name
+        self.ip = ip
+        self.in_use = in_use
+
+    def __repr__(self):
+        return '<id {0}, name {1}, ip {2}, in_use {3}>'.format(self.id, self.name, self.ip, self.in_use)
+
