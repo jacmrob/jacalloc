@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: jacalloc123
 
   jacalloc:
-    image: jacalloc
+    image: .
     ports:
       - "5000:5000"
     environment:
@@ -17,7 +17,6 @@ services:
       PYTHONUNBUFFERED: 0
     volumes:
       - ./startup.sh:/app/startup.sh
-      - ./app:/app
     depends_on:
       - postgres
     links:
