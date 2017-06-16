@@ -1,5 +1,5 @@
-#from app import db
 from flask.ext.sqlalchemy import SQLAlchemy
+import json
 
 db = SQLAlchemy()
 
@@ -23,4 +23,9 @@ class Resource(BaseModel):
 
     def __repr__(self):
         return '<id {0}, name {1}, ip {2}, in_use {3}>'.format(self.id, self.name, self.ip, self.in_use)
+
+    def map(self):
+        return {"name": self.name,
+                "ip": self.ip,
+                "in_use": self.in_use}
 

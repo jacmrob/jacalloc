@@ -31,6 +31,9 @@ def update_resource(body):
     r.in_use = body['in_use']
     db.session.commit()
 
+def get_all_unallocated():
+    return [x.map() for x in Resource.query.filter(Resource.in_use == False)]
+
 ## Routes ##
 
 @app.route('/')
@@ -40,11 +43,13 @@ def health():
 @app.route('/allocate', methods=['POST'])
 def allocate():
     errors = []
+    print request
     try:
-        body = request.get_json()
+        request.get_json()
     except:
         return "Empty request body", 400
-    print body
+
+    body = request.get_json()
     missing = check_request(body, ['name', 'ip', 'in_use'])
 
     # validate request
@@ -81,7 +86,8 @@ def query():
     elif request.args.get('ip'):
         resp = Resource.query.filter(Resource.ip == request.args.get('ip')).first()
     else:
-        return "Bad request: missing query params!", 400
+        # return all unallocated resources
+        return json.dumps(get_all_unallocated()), 200
 
     if resp:
         return str(resp.in_use), 200

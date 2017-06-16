@@ -17,7 +17,6 @@ Can templatize compose and pass in custom db user/pass.
 Adds a record if one does not exist, or updates an existing record
 
 ```
-http --print=hbHB POST http://localhost:5000/allocate < record.json
 curl -X POST -d @record.json http://localhost:5000/allocate --header "Content-Type: application/json"
 ```
 
@@ -34,10 +33,11 @@ Where `record.json` contains
 
 ### GET /query
 
-Queries for the status of a resource.  Can query on `name` or `ip`
+Queries for the status of a resource.  Can query on `name` or `ip`, or without query parameters to return a list of all unallocated resources.
 ```
+curl -X GET http://localhost:5000/query
 curl -X GET http://localhost:5000/query?name=<name>
 curl -X GET http://localhost:5000/query?ip=<ip>
 ```
 
-Returns `200 OK` if successful and "True" if resource is free or "False" if resource is allocated.
+Returns `200 OK` if successful.  If querying on a resource, returns "True" if resource is free or "False" if resource is allocated.  Otherwise, returns list of all unallocated resources.
