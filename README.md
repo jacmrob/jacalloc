@@ -12,12 +12,22 @@ Can templatize compose and pass in custom db user/pass.
 
 ## HTTP API
 
-### POST /allocate
+### GET /resources
 
-Adds a record if one does not exist, or updates an existing record
+Lists all resources
 
 ```
-curl -X POST -d @record.json http://localhost:5000/allocate --header "Content-Type: application/json"
+curl -X GET http://localhost:5000/resources
+curl -X GET http://localhost:5000/resources?in_use=<bool>
+```
+Returns a list of resources and `200 OK` if successful.
+
+### POST /resources
+
+Creates a new resource
+
+```
+curl -X POST -d @record.json http://localhost:5000/resources --header "Content-Type: application/json"
 ```
 
 Where `record.json` contains
@@ -29,15 +39,39 @@ Where `record.json` contains
 }
 ```
 
-`name` and `ip` must be unique.  Returns `200 OK` if successful.
+`name` must be unique.  Returns `200 OK` if successful, `409 Conflict` if resource already exists.
 
-### GET /query
 
-Queries for the status of a resource.  Can query on `name` or `ip`, or without query parameters to return a list of all unallocated resources.
+### GET /resources/:name
+
+Fetches the resource with `name`
 ```
-curl -X GET http://localhost:5000/query
-curl -X GET http://localhost:5000/query?name=<name>
-curl -X GET http://localhost:5000/query?ip=<ip>
+curl -X GET http://localhost:5000/resources/<name>
 ```
 
-Returns `200 OK` if successful.  If querying on a resource, returns "True" if resource is free or "False" if resource is allocated.  Otherwise, returns list of all unallocated resources.
+Returns the ressource and `200 OK` if successful.
+
+### POST /resources/:name
+
+Modifies a resource.
+```
+curl -X POST -d @record.json http://localhost:5000/resources/<name> --header "Content-Type: application/json"
+```
+
+Returns `200 OK` if successful, `404 Not Found` if resource is not found.
+
+### DELETE /resources/:name
+Deletes a resource
+```
+curl -X DELETE http://localhost:5000/resources/<name>
+```
+Returns `201 No Content` if successful.
+
+### POST /resources/allocate
+
+Selects a random resource from the set of unused resources and allocates it to `in_use=True`
+```
+curl -X POST http://localhost:5000/resources/allocate --header "Content-Type: application/json"
+```
+
+Returns the resource and `200 OK` if successful.
