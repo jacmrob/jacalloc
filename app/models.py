@@ -15,17 +15,20 @@ class Resource(BaseModel):
     name = db.Column(db.String)
     ip = db.Column(db.String)
     in_use = db.Column(db.Boolean)
+    project = db.Column(db.String)
 
-    def __init__(self, name, ip, in_use):
+    def __init__(self, name, ip, in_use, project):
         self.name = name
         self.ip = ip
         self.in_use = in_use
+        self.project = project
 
     def __repr__(self):
-        return '<id {0}, name {1}, ip {2}, in_use {3}>'.format(self.id, self.name, self.ip, self.in_use)
+        return '<id {0}, name {1}, ip {2}, in_use {3}, project {4}>'.format(self.id, self.name, self.ip, self.in_use, self.project)
 
     def map(self):
         return {"name": self.name,
                 "ip": self.ip,
+                "project": self.project,
                 "in_use": self.in_use}
 

@@ -18,9 +18,9 @@ Lists all resources
 
 ```
 curl -X GET http://localhost:5000/resources
-curl -X GET http://localhost:5000/resources?in_use=<bool>
+curl -X GET http://localhost:5000/resources?in_use=<bool>?project=<str>
 ```
-Returns a list of resources and `200 OK` if successful.
+Returns a list of resources and `200 OK` if successful.  Can query on `in_use`, `project` or both.
 
 ### POST /resources
 
@@ -72,6 +72,7 @@ Returns `201 No Content` if successful.
 Selects a random resource from the set of unused resources and allocates it to `in_use=True`
 ```
 curl -X POST http://localhost:5000/resources/allocate --header "Content-Type: application/json"
+curl -X POST http://localhost:5000/resources/allocate?project=<str> --header "Content-Type: application/json"
 ```
 
-Returns the resource and `200 OK` if successful.
+Returns the resource and `200 OK` if successful.  Can query on `project`.

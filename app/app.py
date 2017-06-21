@@ -24,8 +24,10 @@ def create_resource(body):
     resource = Resource(
         name=body['name'],
         ip=body['ip'],
-        in_use=body['in_use']
+        in_use=body['in_use'],
+        project=body['project']
     )
+    print "here2"
     db.session.add(resource)
     db.session.commit()
 
@@ -37,17 +39,23 @@ def update_resource(name, body):
         r.name = body['name']
     if 'ip' in body:
         r.ip = body['ip']
+    if 'project' in body:
+        r.project = body['project']
     db.session.commit()
 
 def delete_resource(name):
     Resource.query.filter(Resource.name == name).delete()
     db.session.commit()
 
-def get_all(filter_by_status=False, status=False):
-    if filter_by_status:
-        return [x.map() for x in Resource.query.filter(Resource.in_use == status)]
-    else:
-        return [x.map() for x in Resource.query.all()]
+def get_all_resources(in_use=None, project=None):
+    if in_use and project:
+        return [x.map() for x in Resource.query.filter(Resource.project == project).filter(Resource.in_use == in_use)]
+    if project:
+        return [x.map() for x in Resource.query.filter(Resource.project == project)]
+    if in_use:
+        return [x.map() for x in Resource.query.filter(Resource.project == in_use)]
+    return [x.map() for x in Resource.query.all()]
+
 
 def pick_random_resource(resources):
     x = random.randint(0, len(resources) - 1)
@@ -63,10 +71,11 @@ def api_health():
 
 @app.route('/resources', methods=['GET'])
 def api_get_all_resources():
-    if request.args.get('in_use'):
-        resp = get_all(filter_by_status=True, status=request.args['in_use'])
-    else:
-        resp = get_all()
+    # if request.args.get('in_use'):
+    #     resp = get_all_resources(in_use=request.args['in_use'])
+    # else:
+    #     resp = get_all_resources()
+    resp = get_all_resources(in_use=request.args.get('in_use'), project=request.args.get('project'))
 
     return json.dumps(resp), 200
 
@@ -78,7 +87,7 @@ def api_create_new_resource():
     body = request.get_json()
     if not body:
         return "Empty request body", 400
-    missing = check_request(body, ['name', 'ip', 'in_use'])
+    missing = check_request(body, ['name', 'ip', 'in_use', 'project'])
 
     # validate request
     if missing:
@@ -87,6 +96,7 @@ def api_create_new_resource():
         # new resource
         if not Resource.query.filter_by(name=body['name']).first():
             try:
+                print "here"
                 create_resource(body)
                 return "Created record for {0}".format(body['name']), 200
             except:
@@ -148,7 +158,8 @@ def api_delete_resource(name):
 @app.route('/resources/allocate', methods=['POST'])
 def api_allocate():
     # choose random free resource, and allocate
-    free = get_all(filter_by_status=True)
+
+    free = get_all_resources(in_use=False, project=request.args.get('project'))
     if free:
         allocated = pick_random_resource(free)
         update_resource(allocated['name'], {'in_use': True})
