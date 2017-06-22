@@ -163,6 +163,7 @@ def api_allocate():
     if free:
         allocated = pick_random_resource(free)
         update_resource(allocated['name'], {'in_use': True})
+        allocated['in_use'] = True
         return json.dumps(allocated), 200
     else:
         return "No resources are free!", 500
