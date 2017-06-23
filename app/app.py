@@ -153,7 +153,7 @@ def api_delete_resource(name):
 def api_allocate():
     # choose random free resource, and allocate
 
-    free = get_all_resources(in_use=False, project=request.args.get('project'))
+    free = get_all_resources(in_use="false", project=request.args.get('project'))
     if free:
         allocated = pick_random_resource(free)
         update_resource(allocated['name'], {'in_use': True})
