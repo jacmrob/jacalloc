@@ -53,7 +53,7 @@ def get_all_resources(in_use=None, project=None):
     if project:
         return [x.map() for x in Resource.query.filter(Resource.project == project)]
     if in_use:
-        return [x.map() for x in Resource.query.filter(Resource.project == in_use)]
+        return [x.map() for x in Resource.query.filter(Resource.in_use == in_use)]
     return [x.map() for x in Resource.query.all()]
 
 
@@ -71,12 +71,7 @@ def api_health():
 
 @app.route('/resources', methods=['GET'])
 def api_get_all_resources():
-    # if request.args.get('in_use'):
-    #     resp = get_all_resources(in_use=request.args['in_use'])
-    # else:
-    #     resp = get_all_resources()
     resp = get_all_resources(in_use=request.args.get('in_use'), project=request.args.get('project'))
-
     return json.dumps(resp), 200
 
 
@@ -109,7 +104,6 @@ def api_create_new_resource():
         return str(errors), 500
 
 
-
 @app.route('/resources/<name>', methods=['GET'])
 def api_get_resource(name):
     resp = Resource.query.filter(Resource.name == name).first()
@@ -118,6 +112,7 @@ def api_get_resource(name):
 
     else:
         return "Resource not found!", 404
+
 
 @app.route('/resources/<name>', methods=['POST'])
 def api_update_resource(name):
