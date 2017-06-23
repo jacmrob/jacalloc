@@ -91,7 +91,6 @@ def api_create_new_resource():
         # new resource
         if not Resource.query.filter_by(name=body['name']).first():
             try:
-                print "here"
                 create_resource(body)
                 return "Created record for {0}".format(body['name']), 200
             except:
