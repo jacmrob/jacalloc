@@ -47,6 +47,10 @@ def delete_resource(name):
     Resource.query.filter(Resource.name == name).delete()
     db.session.commit()
 
+
+def get_resource_by_name(name):
+    return Resource.query.filter(Resource.name == name)[0].map()
+
 def get_all_resources(in_use=None, project=None):
     if in_use and project:
         return [x.map() for x in Resource.query.filter(Resource.project == project).filter(Resource.in_use == in_use)]
@@ -92,7 +96,8 @@ def api_create_new_resource():
         if not Resource.query.filter_by(name=body['name']).first():
             try:
                 create_resource(body)
-                return "Created record for {0}".format(body['name']), 200
+                print "Created record for {0}".format(body['name'])
+                return json.dumps(body), 200
             except:
                 e = sys.exc_info()[0]
                 errors.append("Unable to create new record for {0}: {1}".format(body['name'], e))
@@ -127,7 +132,8 @@ def api_update_resource(name):
         body = request.get_json()
         try:
             update_resource(name, body)
-            return "Updated record for {0}.".format(name), 200
+            new = get_resource_by_name(name)
+            return json.dumps(new), 200
         except:
             e = sys.exc_info()[0]
             errors.append("Unable to update record for {0}: {1}".format(body['name'], e))
