@@ -161,12 +161,16 @@ def api_allocate():
 
     free = get_all_resources(in_use="false", project=request.args.get('project'))
     if free:
-        allocated = pick_random_resource(free)
-        update_resource(allocated['name'], {'in_use': True})
-        allocated['in_use'] = True
-        return json.dumps(allocated), 200
+        try:
+            allocated = pick_random_resource(free)
+            update_resource(allocated['name'], {'in_use': True})
+            allocated['in_use'] = True
+            return json.dumps(allocated), 200
+        except:
+            e = sys.exec_info()[0]
+            return str(e), 500
     else:
-        return "No resources are free!", 500
+        return "No resources are free!", 412
 
 
 
