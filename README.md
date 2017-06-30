@@ -75,4 +75,4 @@ curl -X POST http://localhost:5000/resources/allocate --header "Content-Type: ap
 curl -X POST http://localhost:5000/resources/allocate?project=<str> --header "Content-Type: application/json"
 ```
 
-Returns the resource and `200 OK` if successful.  Can query on `project`.
+Returns the resource and `200 OK` if successful.  Returns `412 Precondition failed` if no resources are availible, or `500` for all other errors.  Can query on `project`.
