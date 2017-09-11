@@ -1,15 +1,14 @@
 from flask import Flask, request, jsonify
-from flask.ext.sqlalchemy import SQLAlchemy
 import json
 import sys
 import random
+from sqlalchemy import exc
 
 from models import db, Resource
 
 app = Flask(__name__)
 app.config.from_pyfile('config.py')
 db.init_app(app)
-
 
 ## Resources Table methods ##
 
@@ -27,7 +26,6 @@ def create_resource(body):
         in_use=body['in_use'],
         project=body['project']
     )
-    print "here2"
     db.session.add(resource)
     db.session.commit()
 
@@ -73,39 +71,39 @@ def api_health():
     return 'Service running!', 200
 
 
-@app.route('/resources', methods=['GET'])
-def api_get_all_resources():
-    resp = get_all_resources(in_use=request.args.get('in_use'), project=request.args.get('project'))
-    return json.dumps(resp), 200
-
-
-@app.route('/resources', methods=['POST'])
-def api_create_new_resource():
+@app.route('/resources', methods=['GET', 'POST'])
+def api_create_resource():
     errors = []
     print request
-    body = request.get_json()
-    if not body:
-        return "Empty request body", 400
-    missing = check_request(body, ['name', 'ip', 'in_use', 'project'])
 
-    # validate request
-    if missing:
-        return 'Request missing following fields: {}'.format(missing), 400
-    else:
-        # new resource
-        if not Resource.query.filter_by(name=body['name']).first():
-            try:
-                create_resource(body)
-                print "Created record for {0}".format(body['name'])
-                return json.dumps(body), 200
-            except:
-                e = sys.exc_info()[0]
-                errors.append("Unable to create new record for {0}: {1}".format(body['name'], e))
+    if request.method == 'GET':
+        resp = get_all_resources(in_use=request.args.get('in_use'), project=request.args.get('project'))
+        return json.dumps(resp), 200
 
+    elif request.method == 'POST':
+        body = request.get_json()
+        if not body:
+            return "Empty request body", 400
+        missing = check_request(body, ['name', 'ip', 'in_use', 'project'])
+
+        # validate request
+        if missing:
+            return 'Request missing following fields: {}'.format(missing), 400
         else:
-            return "Resource already exists!", 409
-    if errors:
-        return str(errors), 500
+            # new resource
+            if not Resource.query.filter_by(name=body['name']).first():
+                try:
+                    create_resource(body)
+                    print "Created record for {0}".format(body['name'])
+                    return json.dumps(body), 200
+                except:
+                    e = sys.exc_info()[0]
+                    errors.append("Unable to create new record for {0}: {1}".format(body['name'], e))
+
+            else:
+                return "Resource already exists!", 409
+        if errors:
+            return str(errors), 500
 
 
 @app.route('/resources/<name>', methods=['GET'])
@@ -116,6 +114,19 @@ def api_get_resource(name):
 
     else:
         return "Resource not found!", 404
+
+
+@app.route('/resources/name/<keyword>', methods=['GET'])
+def api_get_by_search(keyword):
+    try:
+        resp = Resource.query.filter(Resource.name.op("~")(keyword))
+        if resp:
+            return json.dumps([x.map() for x in resp.all()]), 200
+        else:
+            return "No resources found matching regex!", 404
+
+    except exc.DataError as e:
+        return ("Invalid keyword \"{0}\". Try removing bad characters.".format(keyword, e)), 400
 
 
 @app.route('/resources/<name>', methods=['POST'])

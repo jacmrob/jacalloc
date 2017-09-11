@@ -49,7 +49,14 @@ Fetches the resource with `name`
 curl -X GET http://localhost:5000/resources/<name>
 ```
 
-Returns the ressource and `200 OK` if successful.
+Returns the resource and `200 OK` if successful.
+
+### GET /resources/name/:keyword
+Fetches all resources with `keyword` in their names
+```
+curl -X GET http://localhost:5000/resources/name/<keyword>
+```
+Returns a list of resources and `200 OK` if successful, `404 Not Found` if no resouces are found on the keyword, and `400 Bad Request` if a malformed keyword is submitted.
 
 ### POST /resources/:name
 
