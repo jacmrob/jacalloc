@@ -1,0 +1,22 @@
+Gets all resources
+---
+tags:
+  - Jacalloc API
+responses:
+  '200':
+    description: Successful request
+    type: array
+    description: list of all resources
+  '500':
+    description: Problem with request
+parameters:
+  - in: query
+    description: if resource in use
+    name: in_use
+    type: string
+    required: false
+    enum: ["true", "false"]
+  - in: query
+    description: project resource belongs to
+    required: false
+    type: string

@@ -3,10 +3,13 @@ import json
 import sys
 import random
 from sqlalchemy import exc
+from flasgger import Swagger
+from flasgger.utils import swag_from
 
 from models import db, Resource
 
 app = Flask(__name__)
+Swagger(app)
 app.config.from_pyfile('config.py')
 db.init_app(app)
 
@@ -67,11 +70,22 @@ def pick_random_resource(resources):
 
 @app.route('/')
 def api_health():
+    '''
+    Health check
+    ---
+    tags:
+      - health
+    responses:
+      '200':
+        description: App is running
+    '''
     # TODO: check if can ping db
     return 'Service running!', 200
 
 
 @app.route('/resources', methods=['GET', 'POST'])
+@swag_from('swagger/resources_get.yml', methods=['GET'])
+@swag_from('swagger/resources_post.yml', methods=['POST'])
 def api_create_resource():
     errors = []
     print request
@@ -108,6 +122,23 @@ def api_create_resource():
 
 @app.route('/resources/<name>', methods=['GET'])
 def api_get_resource(name):
+    '''
+    Gets a resource
+    ---
+    tags:
+      - Jacalloc API
+    responses:
+      '200':
+        description: Resource found
+      '404':
+        description: Resource not found
+    parameters:
+      - in: path
+        description: resource name
+        name: name
+        required: true
+        type: string
+    '''
     resp = Resource.query.filter(Resource.name == name).first()
     if resp:
         return json.dumps(resp.map()), 200
@@ -118,6 +149,25 @@ def api_get_resource(name):
 
 @app.route('/resources/name/<keyword>', methods=['GET'])
 def api_get_by_search(keyword):
+    '''
+    Gets all resources on a keyword
+    ---
+    tags:
+      - Jacalloc API
+    responses:
+      '200':
+        description: Resource(s) found matching request
+      '404':
+        description: No resource(s) found matching request
+      '400':
+        description: Resource request malformed
+    parameters:
+      - in: path
+        description: keyword to search on
+        name: keyword
+        required: true
+        type: string
+    '''
     try:
         resp = Resource.query.filter(Resource.name.op("~")(keyword))
         if resp:
@@ -131,6 +181,41 @@ def api_get_by_search(keyword):
 
 @app.route('/resources/<name>', methods=['POST'])
 def api_update_resource(name):
+    '''
+    Updates a resource
+    ---
+    tags:
+      - Jacalloc API
+    responses:
+      '200':
+        description: Resource successfully updated
+      '400':
+        description: Malformed request
+      '404':
+        description: Resource not found
+    parameters:
+      - in: path
+        description: Resource name
+        name: name
+        required: true
+        type: string
+      - in: body
+        description: Resource IP
+        name: ip
+        required: false
+        type: string
+      - in: body
+        description: Resource project
+        name: project
+        required: false
+        type: string
+      - in: body
+        description: Resource status
+        name: in_use
+        type: string
+        enum: ["true", "false"]
+        required: false
+    '''
     errors = []
     print request
     try:
@@ -158,6 +243,23 @@ def api_update_resource(name):
 
 @app.route('/resources/<name>', methods=['DELETE'])
 def api_delete_resource(name):
+    '''
+    Deletes a resource
+    ---
+    tags:
+      - Jacalloc API
+    responses:
+      '201':
+        description: Resource successfully deleted
+      '500':
+        description: Resource delete failed
+    parameters:
+      - in: path
+        description: Resource name
+        name: name
+        required: true
+        type: string
+    '''
     try:
         delete_resource(name)
         return "Deleted resource {0}".format(name), 201
@@ -168,7 +270,26 @@ def api_delete_resource(name):
 
 @app.route('/resources/allocate', methods=['POST'])
 def api_allocate():
-    # choose random free resource, and allocate
+    '''
+    Allocates a resource
+    Chooses a random resource where in_use == False and sets in_use = True
+    ---
+    tags:
+      - Jacalloc API
+    responses:
+      '200':
+        description: Resource successfully allocated
+      '412':
+        description: No resources are free to allocate
+      '500':
+        description: Resource allocation failed
+    parameters:
+      - in: query
+        description: Resource project
+        name: project
+        required: false
+        type: string
+    '''
 
     free = get_all_resources(in_use="false", project=request.args.get('project'))
     if free:
