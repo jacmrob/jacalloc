@@ -1,0 +1,30 @@
+Creates a new resource
+---
+tags:
+  - Jacalloc API
+responses:
+  '201':
+    description: Resource successfully created
+  '400':
+    description: Malformed request
+  '409':
+    description: Resource already exists
+parameters:
+  - in: body
+    description: resource name
+    name: name
+    required: true
+  - in: body
+    description: resource IP
+    name: ip
+    required: true
+  - in: body
+    description: resource project
+    name: project
+    required: true
+  - in: body
+    description: if resource in use
+    name: in_use
+    required: true
+    type: string
+    enum: ["true", "false"]
