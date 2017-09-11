@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: jacalloc123
 
   app:
-    image: jacalloc
+    build: .
     ports:
       - "5000:5000"
     environment:
