@@ -75,6 +75,8 @@ def api_health():
 
 @app.route('/resources', methods=['GET'])
 def api_get_all_resources():
+    print request.args.get('in_use')
+    print request.args.get('project')
     resp = get_all_resources(in_use=request.args.get('in_use'), project=request.args.get('project'))
     return json.dumps(resp), 200
 
