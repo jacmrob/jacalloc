@@ -18,5 +18,6 @@ parameters:
     enum: ["true", "false"]
   - in: query
     description: project resource belongs to
+    name: project
     required: false
     type: string
