@@ -5,7 +5,7 @@ tags:
 responses:
   '200':
     description: Successful request
-    type: array
+    type: object
     description: list of all resources
   '500':
     description: Problem with request

@@ -5,26 +5,33 @@ tags:
 responses:
   '201':
     description: Resource successfully created
+    type: object
   '400':
     description: Malformed request
   '409':
     description: Resource already exists
 parameters:
   - in: body
-    description: resource name
-    name: name
+    name: body
     required: true
-  - in: body
-    description: resource IP
-    name: ip
-    required: true
-  - in: body
-    description: resource project
-    name: project
-    required: true
-  - in: body
-    description: if resource in use
-    name: in_use
-    required: true
-    type: string
-    enum: ["true", "false"]
+    schema:
+      id: Resource
+      required:
+        - name
+        - ip
+        - project
+        - in_use
+      properties:
+        name:
+          description: Resource name
+          type: string
+        ip:
+          description: Resource ip
+          type: string
+        project:
+          description: Resource project
+          type: string
+        in_use:
+          description: Resource status
+          type: string
+          enum: ["true", "false"]

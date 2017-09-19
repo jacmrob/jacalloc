@@ -109,7 +109,7 @@ def api_create_resource():
                 try:
                     create_resource(body)
                     print "Created record for {0}".format(body['name'])
-                    return json.dumps(body), 200
+                    return json.dumps(body), 201
                 except:
                     e = sys.exc_info()[0]
                     errors.append("Unable to create new record for {0}: {1}".format(body['name'], e))
@@ -200,21 +200,20 @@ def api_update_resource(name):
         required: true
         type: string
       - in: body
-        description: Resource IP
-        name: ip
-        required: false
-        type: string
-      - in: body
-        description: Resource project
-        name: project
-        required: false
-        type: string
-      - in: body
-        description: Resource status
-        name: in_use
-        type: string
-        enum: ["true", "false"]
-        required: false
+        name: body
+        required: true
+        schema:
+          properties:
+            ip:
+              type: string
+              description: Resource IP
+            project:
+              type: string
+              description: Resource project
+            in_use:
+              type: string
+              enum: ["true", "false"]
+              description: Resource status
     '''
     errors = []
     print request
