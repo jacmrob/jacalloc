@@ -35,3 +35,8 @@ parameters:
           description: Resource status
           type: string
           enum: ["true", "false"]
+        private:
+          description: If resource private
+          type: string
+          enum: ["true", "false"]
+          default: "false"

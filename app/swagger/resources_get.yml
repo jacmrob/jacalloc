@@ -21,3 +21,8 @@ parameters:
     name: project
     required: false
     type: string
+  - in: query
+    description: if resources is private
+    name: private
+    required: false
+    enum: ["true","false"]
