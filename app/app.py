@@ -27,7 +27,8 @@ def create_resource(body):
         name=body['name'],
         ip=body['ip'],
         in_use=body['in_use'],
-        project=body['project']
+        project=body['project'],
+        private=body.get('private') or False
     )
     db.session.add(resource)
     db.session.commit()
@@ -42,6 +43,8 @@ def update_resource(name, body):
         r.ip = body['ip']
     if 'project' in body:
         r.project = body['project']
+    if 'private' in body:
+        r.private = body['private']
     db.session.commit()
 
 def delete_resource(name):
@@ -52,14 +55,13 @@ def delete_resource(name):
 def get_resource_by_name(name):
     return Resource.query.filter(Resource.name == name)[0].map()
 
-def get_all_resources(in_use=None, project=None):
-    if in_use and project:
-        return [x.map() for x in Resource.query.filter(Resource.project == project).filter(Resource.in_use == in_use)]
-    if project:
-        return [x.map() for x in Resource.query.filter(Resource.project == project)]
-    if in_use:
-        return [x.map() for x in Resource.query.filter(Resource.in_use == in_use)]
-    return [x.map() for x in Resource.query.all()]
+def get_all_resources(**filters):
+    res = Resource.query
+    for name, filt in filters.iteritems():
+        if filt is not None:
+            d = {name: filt}
+            res = res.filter_by(**d)
+    return [x.map() for x in res.all()]
 
 
 def pick_random_resource(resources):
@@ -91,7 +93,7 @@ def api_create_resource():
     print request
 
     if request.method == 'GET':
-        resp = get_all_resources(in_use=request.args.get('in_use'), project=request.args.get('project'))
+        resp = get_all_resources(in_use=request.args.get('in_use'), project=request.args.get('project'), private=request.args.get('private'))
         return json.dumps(resp), 200
 
     elif request.method == 'POST':
@@ -290,7 +292,7 @@ def api_allocate():
         type: string
     '''
 
-    free = get_all_resources(in_use="false", project=request.args.get('project'))
+    free = get_all_resources(in_use="false", project=request.args.get('project'), private="false")
     if free:
         try:
             allocated = pick_random_resource(free)
