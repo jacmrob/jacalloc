@@ -3,3 +3,6 @@ Flask==0.10.1
 Flask-SQLAlchemy==2.1
 Flask-Migrate==1.8.0
 flasgger
+python-dotenv
+google-api-python-client
+requests
