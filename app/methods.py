@@ -1,36 +1,8 @@
 from models import db, Resource
 from backends.gcloud import *
 import random
+import datetime
 from googleapiclient.errors import HttpError
-
-
-class CheckRequest:
-
-    def check_request_contains(self, request_dict, keys):
-        missing = []
-        for k in keys:
-            if k not in request_dict.keys():
-                missing.append(k)
-        return missing
-
-    def check_request_does_not_contain(self, request_dict, keys):
-        banned = []
-        for k in keys:
-            if k in request_dict:
-                banned.append(k)
-        return banned
-
-    def check_request_create(self, request_dict):
-        return self.check_request_contains(request_dict, Resource.required_keys)
-
-    def check_request_update(self, request_dict):
-        return self.check_request_does_not_contain(request_dict, Resource.immutable_keys)
-
-
-class CheckRequestGcloud(CheckRequest):
-
-    def check_request_create(self, request_dict):
-        return CheckRequest.check_request_contains(self, request_dict, ["name", "tags", "project", "zone", "in_use"])
 
 
 class ResourceMethods:
@@ -65,10 +37,14 @@ class ResourceMethods:
         db.session.commit()
 
     def update_resource(self, name, body):
+        if body.get('in_use'):
+            body['timestamp'] = datetime.datetime.now()
+
         r = self.get_resource_by_name(name=name)
-        for f in Resource.required_keys:
-            if f in body:
-                r.f = body[f]
+        for f in body.keys():
+            if hasattr(r, f):
+                setattr(r, f, body[f])
+
         db.session.commit()
 
     def delete_resource(self, name):
@@ -100,10 +76,14 @@ class GcloudResourceMethods(ResourceMethods):
                     break
             return x
 
+    def get_all_resources(self, **filters):
+        resources = ResourceMethods.get_all_resources(self, **filters)
+        return [r for r in resources if self.get_resource_by_name(r["name"], r["project"])]
+
     def update_resource(self, name, body):
         r = self.get_resource_by_name(name)
         if r:
-            GcloudInstanceResourceMethods(self.backend_config, r["project"]).update_resource(name, body)
+            GcloudInstanceResourceMethods(self.backend_config, r.project).update_resource(name, body)
 
     def create_resource(self, body):
         GcloudInstanceResourceMethods(self.backend_config, body["project"]).create_resource(body)
@@ -111,7 +91,9 @@ class GcloudResourceMethods(ResourceMethods):
     def delete_resource(self, name):
         r = self.get_resource_by_name(name)
         if r:
-            GcloudInstanceResourceMethods(self.backend_config, r["project"]).delete_resource(name)
+            GcloudInstanceResourceMethods(self.backend_config, r.project).delete_resource(name)
+        else:
+            raise StandardError("Resource {0} not found!".format(name))
 
 
 class GcloudInstanceResourceMethods(GcloudResourceMethods):
@@ -129,8 +111,9 @@ class GcloudInstanceResourceMethods(GcloudResourceMethods):
             except HttpError as e:
                 if e.resp.status == 404:
                     if ResourceMethods.get_resource_by_name(self, name, project):
-                        print "[DEBUG] Resource found in allocator db but not in google. Deleting from allocator db to clean up state."
-                        ResourceMethods.delete_resource(name)
+                        print "[DEBUG] Resource found in allocator db but not in google. " \
+                              "Deleting from allocator db to clean up state."
+                        ResourceMethods.delete_resource(self, name)
                     return None
                 else:
                     raise StandardError("Something went wrong during instance get.")
@@ -139,17 +122,24 @@ class GcloudInstanceResourceMethods(GcloudResourceMethods):
 
     def update_resource(self, name, body):
         if self.project_attrs:
-            if body['usable']:
+            usable = body.get('usable')
+            if usable:
                 try:
                     operation = start_instance(self.project_attrs.compute, self.project, self.project_attrs.zone, name)
                     wait_for_operation(self.project_attrs.compute, self.project, self.project_attrs.zone, operation['name'])
+                    instance_data = list_instances(self.project_attrs.compute, self.project, self.project_attrs.zone, name=name)[0]
+                    body["ip"] = str(instance_data['networkInterfaces'][0]['accessConfigs'][0]['natIP'])
+
                 except HttpError as e:
                     raise StandardError("Instance startup failed with status {0}".format(e.resp.status))
 
-            if not body['usable']:
+            # Must use an explicit check of if usable == False to avoid turning off resource in the case where usable is not in body
+            #   in this case, body.get('usable') will return None.  None != False :)
+            if usable == False:
                 try:
                     operation = stop_instance(self.project_attrs.compute, self.project, self.project_attrs.zone, name)
                     wait_for_operation(self.project_attrs.compute, self.project, self.project_attrs.zone, operation['name'])
+
                 except HttpError as e:
                     raise StandardError("Instance startup failed with status {0}".format(e.resp.status))
 
@@ -161,7 +151,8 @@ class GcloudInstanceResourceMethods(GcloudResourceMethods):
         if self.project_attrs:
             try:
                 operation = create_instance(self.project_attrs.compute, self.project, self.project_attrs.zone,
-                                            body["name"], body["tags"],  disk_size=(body.get("disk_size") or '100'),
+                                            body["name"], body["tags"],
+                                            disk_size=(body.get("disk_size") or '100'),
                                             disk_type=(body.get("disk_type") or "pd-ssd"),
                                             machine_type=(body.get("machine_type") or "n1-standard-8"))
                 wait_for_operation(self.project_attrs.compute, self.project, self.project_attrs.zone, operation['name'])
@@ -180,7 +171,7 @@ class GcloudInstanceResourceMethods(GcloudResourceMethods):
     def delete_resource(self, name):
         if self.project_attrs:
             try:
-                operation = delete_instance(self.project_attrs.compute, self.project, self.project_attrs.zone)
+                operation = delete_instance(self.project_attrs.compute, self.project, self.project_attrs.zone, name)
                 wait_for_operation(self.project_attrs.compute, self.project, self.project_attrs.zone, operation['name'])
                 ResourceMethods.delete_resource(self, name)
 
@@ -188,12 +179,14 @@ class GcloudInstanceResourceMethods(GcloudResourceMethods):
                 if e.resp.status == 404:
                     # if we arrived here, we did not find the resource in google but we DID find it in the db
                     # deleting the db entry to clean up
-                    raise StandardError("Error! instance {0} not found in gcloud.".format(body["name"]))
+                    raise StandardError("Error! instance {0} not found in gcloud.".format(name))
                 else:
                     raise StandardError("Something went wrong during instance creation.")
         else:
             raise StandardError("Cannot delete resource; no gcloud credentials for project {0}".format(self.project))
 
+
+## Object Generators ##
 
 def generate_resource_methods(backend, backend_config):
     if backend == 'gce':
@@ -201,9 +194,3 @@ def generate_resource_methods(backend, backend_config):
     else:
         return ResourceMethods
 
-
-def generate_request_checker(backend):
-    if backend == 'gce':
-        return CheckRequestGcloud
-    else:
-        return CheckRequest

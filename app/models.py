@@ -1,6 +1,6 @@
 from flask.ext.sqlalchemy import SQLAlchemy
 import json
-
+from datetime import datetime, timedelta
 db = SQLAlchemy()
 
 
@@ -18,6 +18,7 @@ class Resource(BaseModel):
     project = db.Column(db.String)
     private = db.Column(db.Boolean, default=False)
     usable = db.Column(db.Boolean, default=False)
+    timestamp = db.Column(db.DateTime, default=None)
 
     def __init__(self, name, ip, in_use, project, private=False, usable=False):
         self.name = name
@@ -26,11 +27,12 @@ class Resource(BaseModel):
         self.project = project
         self.private = private
         self.usable = usable
-        self.required_keys = ["name", "ip", "project", "in_use"]
-        self.immutable_keys = ["name", "project"]
+
+        self.timestamp = None
 
     def __repr__(self):
-        return '<id {0}, name {1}, ip {2}, in_use {3}, project {4}, private {5}, usable {6}>'.format(self.id, self.name, self.ip, self.in_use, self.project, self.private, self.usable)
+        return '<id {0}, name {1}, ip {2}, in_use {3}, project {4}, private {5}, usable {6}, timestamp {7}>'.format(
+            self.id, self.name, self.ip, self.in_use, self.project, self.private, self.usable, self.timestamp)
 
     def map(self):
         return {"name": self.name,
@@ -42,6 +44,16 @@ class Resource(BaseModel):
 
     def get_required_keys(self):
         return self.required_keys
+
+    def get_time_running(self):
+        return datetime.now() - self.timestamp if self.timestamp else None
+
+    # 5 hr timeout
+    def is_expired(self, expiry=18000):
+        if self.get_time_running():
+            return self.get_time_running().total_seconds() >= expiry
+        else:
+            return False
 
 
 #TODO: allow user to register more projects?

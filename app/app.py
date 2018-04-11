@@ -7,7 +7,8 @@ from flasgger.utils import swag_from
 from config import generate_config
 from models import db
 
-from methods import generate_resource_methods, generate_request_checker
+from methods import generate_resource_methods
+from checkers import generate_request_checker
 
 app = Flask(__name__)
 Swagger(app)
@@ -38,8 +39,6 @@ def api_health():
 @swag_from('swagger/resources_get.yml', methods=['GET'])
 @swag_from('swagger/resources_post.yml', methods=['POST'])
 def api_create_resource():
-    errors = []
-    print request
 
     if request.method == 'GET':
         resp = resource_methods.get_all_resources(in_use=request.args.get('in_use'), project=request.args.get('project'), private=request.args.get('private'))
@@ -49,22 +48,22 @@ def api_create_resource():
         body = request.get_json()
         if not body:
             return "Empty request body", 400
-        missing = check_request().check_request_create(body)
+        errors = check_request().check_request_create(body)
 
         # validate request
-        if missing:
-            return 'Request missing following fields: {}'.format(missing), 400
+        if errors:
+            return str(errors), 400
         else:
             # new resource
             if not resource_methods.get_resource_by_name(name=body['name']):
-                #resource_methods.create_resource(body)
                 try:
                     resource_methods.create_resource(body)
                     print "Created record for {0}".format(body['name'])
                     return json.dumps(body), 201
+
                 except:
                     _, exc_value, _ = sys.exc_info()
-                    errors.append("Unable to create new record for {0}:{1}".format(body['name'], exc_value))
+                    errors = "Unable to create new record for {0}: {1}".format(body['name'], exc_value)
 
             else:
                 return "Resource already exists!", 409
@@ -96,12 +95,16 @@ def api_get_resource(name):
         required: false
         type: string
     '''
-    resp = resource_methods.get_resource_by_name(name, project=request.args.get('project'))
-    if resp:
-        return json.dumps(resp.map()), 200
+    try:
+        resp = resource_methods.get_resource_by_name(name, project=request.args.get('project'))
+        if resp:
+            return json.dumps(resp.map()), 200
 
-    else:
-        return "Resource not found!", 404
+        else:
+            return "Resource not found!", 404
+    except:
+        _, exc_value, _ = sys.exc_info()
+        return "Unable to fetch record {0}: {1}".format(name, exc_value), 500
 
 
 @app.route('/resources/name/<keyword>', methods=['GET'])
@@ -177,8 +180,6 @@ def api_update_resource(name):
               enum: ["true", "false"]
               description: Resource status
     '''
-    errors = []
-    print request
     try:
         request.get_json()
     except:
@@ -187,20 +188,22 @@ def api_update_resource(name):
     resp = resource_methods.get_resource_by_name(name)
     if resp:
         body = request.get_json()
-        banned = check_request.check_request_update()
-        if not banned:
+        errors = check_request().check_request_update(body)
+        if not errors:
             try:
+
                 resource_methods.update_resource(name, body)
                 new = resource_methods.get_resource_by_name(name)
-                return json.dumps(new), 200
+                return json.dumps(new.map()), 200
             except:
-                e = sys.exc_info()[0]
-                errors.append("Unable to update record for {0}: {1}".format(body['name'], e))
+                a, exc_value, _ = sys.exc_info()
+                errors = "Unable to update record for {0}: {1}".format(name, exc_value)
         else:
-            return "The following resource fields are immutable: {}".format(banned), 400
+            return str(errors), 400
 
     else:
         return "Resource not found. Cannot update.", 404
+
 
     if errors:
         return str(errors), 500
@@ -229,7 +232,7 @@ def api_delete_resource(name):
         resource_methods.delete_resource(name)
         return "Deleted resource {0}".format(name), 201
     except:
-        e = sys.exc_info()[0]
+        e = sys.exc_info()[1]
         return str(e), 500
 
 
@@ -256,7 +259,8 @@ def api_allocate():
         type: string
     '''
 
-    free = resource_methods.get_all_resources(in_use="false", project=request.args.get('project'), private="false", usable="true")
+    free = resource_methods.get_all_resources(in_use="false", project=request.args.get('project'),
+                                              private="false", usable="true")
     if free:
         try:
             allocated = resource_methods.pick_random_resource(free)
@@ -264,7 +268,7 @@ def api_allocate():
             allocated['in_use'] = True
             return json.dumps(allocated), 200
         except:
-            e = sys.exec_info()[0]
+            e = sys.exec_info()[1]
             return str(e), 500
     else:
         return "No resources are free!", 412

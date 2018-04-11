@@ -19,10 +19,10 @@ services:
       RESOURCE_TYPE: 'fiab'
 
     volumes:
-      - ./startup.sh:/app/startup.sh
+      - ./startup.sh:/app/startup.sh:ro
       - ./app:/app
-      - ./broad-dsde-dev.json:/app/broad-dsde-dev.json
-      - ./broad-dsde-dev.env:/app/broad-dsde-dev.env
+      - ./broad-dsde-dev.json:/app/broad-dsde-dev.json:ro
+      - ./broad-dsde-dev.env:/app/broad-dsde-dev.env:ro
     depends_on:
       - postgres
     links:
