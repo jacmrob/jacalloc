@@ -127,11 +127,6 @@ def api_get_by_search(keyword):
         name: keyword
         required: true
         type: string
-      - in: query
-        description: Resource project
-        name: project
-        required: false
-        type: string
     '''
     try:
         resp = resource_methods.list_resources_by_keyword(keyword)
@@ -230,7 +225,7 @@ def api_delete_resource(name):
     '''
     try:
         resource_methods.delete_resource(name)
-        return "Deleted resource {0}".format(name), 201
+        return "Deleted resource {0}".format(name), 204
     except:
         e = sys.exc_info()[1]
         return str(e), 500

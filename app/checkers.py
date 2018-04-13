@@ -32,7 +32,7 @@ class CheckRequest:
         return [k for k in keys if k in request_dict.keys()]
 
     def check_request_types(self, request_dict, key_types):
-        return [k for k, v in request_dict.iteritems() if not key_types[k](v)]
+        return [k for k, v in request_dict.iteritems() if k in key_types.keys() and not key_types[k](v)]
 
     def check_request_create(self, request_dict, required_keys=None, key_types=None):
         required_keys = required_keys or self.required_keys

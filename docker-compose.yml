@@ -16,7 +16,6 @@ services:
       POSTGRES_URL: 'postgresql://jacalloc:jacalloc123@postgres:5432/jacalloc'
       PYTHONUNBUFFERED: 0
       RESOURCE_BACKEND: 'gce'
-      RESOURCE_TYPE: 'fiab'
 
     volumes:
       - ./startup.sh:/app/startup.sh:ro

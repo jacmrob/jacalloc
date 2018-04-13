@@ -118,7 +118,8 @@ class GcloudInstanceResourceMethods(GcloudResourceMethods):
                 else:
                     raise StandardError("Something went wrong during instance get.")
         else:
-            raise StandardError("Cannot fetch resource; no gcloud credentials for project {0}".format(self.project))
+            print "[DEBUG] Cannot fetch resource; no gcloud credentials for project {0}".format(self.project)
+            return None
 
     def update_resource(self, name, body):
         if self.project_attrs:
