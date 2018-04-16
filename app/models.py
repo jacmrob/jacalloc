@@ -27,7 +27,6 @@ class Resource(BaseModel):
         self.project = project
         self.private = private
         self.usable = usable
-
         self.timestamp = None
 
     def __repr__(self):
@@ -40,7 +39,8 @@ class Resource(BaseModel):
                 "project": self.project,
                 "in_use": self.in_use,
                 "private": self.private,
-                "usable": self.usable}
+                "usable": self.usable,
+                "time_running": str(self.get_time_running())}
 
     def get_required_keys(self):
         return self.required_keys
@@ -50,7 +50,10 @@ class Resource(BaseModel):
 
     # 5 hr timeout
     def is_expired(self, expiry=18000):
+        print "in expired checK"
+        print type(expiry)
         if self.get_time_running():
+            print self.get_time_running().total_seconds()
             return self.get_time_running().total_seconds() >= expiry
         else:
             return False

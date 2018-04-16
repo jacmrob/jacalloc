@@ -17,18 +17,24 @@ class ResourceMethods:
         return Resource.query.filter(Resource.name.op("~")(keyword))
 
     def get_all_resources(self, **filters):
+        print filters
         res = Resource.query
         for name, filt in filters.iteritems():
-            if filt is not None:
+            print name, filt
+            if filt is not None and name is not 'expired':
                 d = {name: filt}
                 res = res.filter_by(**d)
+        if 'expired' in filters:
+            print filters['expired'], type(filters['expired'])
+            return [x.map() for x in res.all() if x.is_expired(filters['expired'] or 18000)]
         return [x.map() for x in res.all()]
+
 
     def create_resource(self, body):
         resource = Resource(
             name=body['name'],
             ip=body['ip'],
-            in_use=body['in_use'],
+            in_use=body.get('in_use') or False,
             project=body['project'],
             private=body.get('private') or False,
             usable=body.get('usable') or False

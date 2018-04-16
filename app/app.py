@@ -269,5 +269,47 @@ def api_allocate():
         return "No resources are free!", 412
 
 
+@app.route('/resources/allocate/timeout', methods=['GET'])
+def api_get_timeouts():
+    '''
+    Gets all allocated resources that have timed out
+    ---
+    tags:
+      - Jacalloc API
+    responses:
+      '200':
+        description: List of resources
+      '500':
+        description: Something went wrong during fetch
+    parameters:
+      - in: query
+        description: Resource project
+        name: project
+        required: false
+        type: string
+      - in: query
+        description: If resource private
+        name: private
+        required: false
+        enum: ["true","false"]
+      - in: query
+        description: Amount of time (in seconds) in_use to filter resources by
+        name: timeout
+        required: false
+        type: integer
+        minimum: 1
+    '''
+    try:
+        r = resource_methods.get_all_resources(in_use="true",
+                                               project=request.args.get("project"),
+                                               private=request.args.get("private"),
+                                               expired=int(request.args.get("timeout")))
+        return json.dumps(r), 200
+
+    except:
+        _, e, _ = sys.exec_info()
+        return str(e), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
