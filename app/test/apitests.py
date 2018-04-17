@@ -18,7 +18,7 @@ class TestCreateApi(unittest.TestCase):
     Must run before TestDependentApi to ensure we can create/destroy resources to test with."""
 
     def setUp(self):
-        self.base_url = 'http://localhost:5000/'
+        self.base_url = 'http://app:5000/'
         self.base_url_resources = self.base_url + 'resources'
         self.resource_name = "testapi" + str(uuid.uuid1())[:15]
         self.create_body = {"ip": "0.0.0.0",
@@ -74,7 +74,7 @@ class TestDependentApi(unittest.TestCase):
     """
     @classmethod
     def setUpClass(cls):
-        cls.base_url = 'http://localhost:5000/'
+        cls.base_url = 'http://app:5000/'
         cls.base_url_resources = cls.base_url + 'resources'
         cls.resource_name = "testallocatorapi-" + str(uuid.uuid1())[:15]
         cls.project = 'apitests'
@@ -241,7 +241,7 @@ class TestDependentApi(unittest.TestCase):
 class TestCreateApiGcloud(TestCreateApi):
 
     def setUp(self):
-        self.base_url = 'http://localhost:5000/'
+        self.base_url = 'http://app:5000/'
         self.base_url_resources = self.base_url + 'resources'
         self.create_body = {"tags": ["jacalloc-tests"],
                             "project": "broad-dsde-dev",
@@ -254,7 +254,7 @@ class TestDependentApiGcloud(TestDependentApi):
 
     @classmethod
     def setUpClass(cls):
-        cls.base_url = 'http://localhost:5000/'
+        cls.base_url = 'http://app:5000/'
         cls.base_url_resources = cls.base_url + 'resources'
         cls.headers = {"Content-Type": "application/json"}
         cls.project = "broad-dsde-dev"

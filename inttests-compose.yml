@@ -25,3 +25,15 @@ services:
       - postgres:postgres
     working_dir: /app
     entrypoint: ["./startup.sh"]
+
+  tests:
+    image: broadinstitute/python-requests:2.7
+    volumes:
+      - ./app/test:/test
+      - ./test-startup.sh:/test/test-startup.sh
+    depends_on:
+      - app
+      - postgres
+    links:
+      - app:app
+    entrypoint: bash /test/test-startup.sh
