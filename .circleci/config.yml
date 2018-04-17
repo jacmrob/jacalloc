@@ -14,7 +14,7 @@ jobs:
           command: docker login -u $DOCKER_USER -p $DOCKER_PASS
       - run:
           name: get service acct
-          command: docker run -e VAULT_TOKEN=$VAULT_TOKEN broadinstitute/dsde-toolbox vault read -format=json secret/dsde/firecloud/dev/firecloud-account.json | jq '.data' > broad-dsde-dev.json
+          command: docker run -e VAULT_TOKEN=$VAULT_TOKEN broadinstitute/dsde-toolbox vault read -format=json secret/dsde/firecloud/dev/common/firecloud-account.json | jq '.data' > broad-dsde-dev.json
       - run:
           name: run integration tests
           command: docker-compose -f inttests-gce-compose.yml up --abort-on-container-exit
