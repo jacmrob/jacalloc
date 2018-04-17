@@ -48,10 +48,12 @@ workflows:
   version: 2
   build:
     jobs:
-      - test
+      - test-standard
+      - test-gce
       - docker-build:
           requires:
-            - test
+            - test-standard
+            - test-gce
           filter:
             branches:
               only:
