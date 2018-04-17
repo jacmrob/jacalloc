@@ -9,17 +9,24 @@ jobs:
     working_directory: ~/repo
     steps:
       - checkout
-      - run: sudo /opt/google-cloud-sdk/bin/gcloud components update --quiet
-      - run: sudo /opt/google-cloud-sdk/bin/gcloud components install beta --quiet
-      - run: echo $DEV_SVC_ACCT | base64 --decode --ignore-garbage > ${HOME}/broad-dsde-dev.json
-      - run: docker-compose -f inttests-gce-compose.yml up --abort-on-container-exit
+      - run:
+          name: Docker login
+          command: docker login -u $DOCKER_USER -p $DOCKER_PASS
+      - run:
+          name: get service acct
+          command: docker run -e VAULT_TOKEN=$VAULT_TOKEN broadinstitute/dsde-toolbox vault read -format=json secret/dsde/firecloud/dev/firecloud-account.json | jq '.data' > broad-dsde-dev.json
+      - run:
+          name: run integration tests
+          command: docker-compose -f inttests-gce-compose.yml up --abort-on-container-exit
 
   test-standard:
     machine: true
     working_directory: ~/repo
     steps:
       - checkout
-      - run: docker-compose -f inttests-compose.yml up --abort-on-container-exit
+      - run:
+          name: run integration tests
+          command: docker-compose -f inttests-compose.yml up --abort-on-container-exit
 
 
   docker-build:
