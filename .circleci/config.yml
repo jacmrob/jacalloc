@@ -9,6 +9,8 @@ jobs:
     working_directory: ~/repo
     steps:
       - checkout
+      - run: sudo /opt/google-cloud-sdk/bin/gcloud components update --quiet
+      - run: sudo /opt/google-cloud-sdk/bin/gcloud components install beta --quiet
       - run: echo $DEV_SVC_ACCT | base64 --decode --ignore-garbage > ${HOME}/broad-dsde-dev.json
       - run: docker-compose -f inttests-gce-compose.yml up -d
       - run: python -m unittest app.test.apitests.TestCreateApiGcloud
