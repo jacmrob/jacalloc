@@ -20,7 +20,7 @@ class TestCreateApi(unittest.TestCase):
     def setUp(self):
         self.base_url = 'http://localhost:5000/'
         self.base_url_resources = self.base_url + 'resources'
-        self.resource_name = "testapi" + str(uuid.uuid1()[:15])
+        self.resource_name = "testapi" + str(uuid.uuid1())[:15]
         self.create_body = {"ip": "0.0.0.0",
                             "project": "apitests",
                             "in_use": False}
@@ -77,9 +77,10 @@ class TestDependentApi(unittest.TestCase):
         cls.base_url = 'http://localhost:5000/'
         cls.base_url_resources = cls.base_url + 'resources'
         cls.resource_name = "testallocatorapi-" + str(uuid.uuid1())[:15]
+        cls.project = 'apitests'
         cls.create_body = {"name": cls.resource_name,
                             "ip": "0.0.0.0",
-                            "project": "apitests",
+                            "project": cls.project,
                             "in_use": False}
         cls.headers = {"Content-Type": "application/json"}
         init_resp = requests.post(cls.base_url_resources, data=json.dumps(cls.create_body), headers=cls.headers)
@@ -233,7 +234,7 @@ class TestDependentApi(unittest.TestCase):
         allocated = self.allocate(self.resource_name)
         time.sleep(7)
         timed_out = requests.get(self.base_url_resources + "/allocate/timeout", params={"project": self.project, "timeout": 4})
-        self.assert_record_is_in_list(timed_out, allocated["name"])
+        self.assert_record_is_in_list(timed_out.json(), allocated["name"])
         self.free(allocated)
 
 

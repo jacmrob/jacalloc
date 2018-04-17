@@ -50,10 +50,7 @@ class Resource(BaseModel):
 
     # 5 hr timeout
     def is_expired(self, expiry=18000):
-        print "in expired checK"
-        print type(expiry)
         if self.get_time_running():
-            print self.get_time_running().total_seconds()
             return self.get_time_running().total_seconds() >= expiry
         else:
             return False

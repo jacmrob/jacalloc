@@ -1,0 +1,27 @@
+version: '2'
+services:
+  postgres:
+    image: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: jacalloc
+      POSTGRES_PASSWORD: jacalloc123
+
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      POSTGRES_URL: 'postgresql://jacalloc:jacalloc123@postgres:5432/jacalloc'
+      PYTHONUNBUFFERED: 0
+
+    volumes:
+      - ./startup.sh:/app/startup.sh:ro
+      - ./app:/app
+    depends_on:
+      - postgres
+    links:
+      - postgres:postgres
+    working_dir: /app
+    entrypoint: ["./startup.sh"]

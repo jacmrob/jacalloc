@@ -39,6 +39,7 @@ def api_health():
 @swag_from('swagger/resources_get.yml', methods=['GET'])
 @swag_from('swagger/resources_post.yml', methods=['POST'])
 def api_create_resource():
+    print resource_methods
 
     if request.method == 'GET':
         resp = resource_methods.get_all_resources(in_use=request.args.get('in_use'), project=request.args.get('project'), private=request.args.get('private'))
@@ -48,7 +49,7 @@ def api_create_resource():
         body = request.get_json()
         if not body:
             return "Empty request body", 400
-        errors = check_request().check_request_create(body)
+        errors = check_request.check_request_create(body)
 
         # validate request
         if errors:
@@ -183,7 +184,7 @@ def api_update_resource(name):
     resp = resource_methods.get_resource_by_name(name)
     if resp:
         body = request.get_json()
-        errors = check_request().check_request_update(body)
+        errors = check_request.check_request_update(body)
         if not errors:
             try:
 

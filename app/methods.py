@@ -11,21 +11,20 @@ class ResourceMethods:
     """
 
     def get_resource_by_name(self, name, project=None):
+        if project:
+            return Resource.query.filter(Resource.project == project).filter(Resource.name == name).first()
         return Resource.query.filter(Resource.name == name).first()
 
     def list_resources_by_keyword(self, keyword):
         return Resource.query.filter(Resource.name.op("~")(keyword))
 
     def get_all_resources(self, **filters):
-        print filters
         res = Resource.query
         for name, filt in filters.iteritems():
-            print name, filt
             if filt is not None and name is not 'expired':
                 d = {name: filt}
                 res = res.filter_by(**d)
         if 'expired' in filters:
-            print filters['expired'], type(filters['expired'])
             return [x.map() for x in res.all() if x.is_expired(filters['expired'] or 18000)]
         return [x.map() for x in res.all()]
 
@@ -199,5 +198,5 @@ def generate_resource_methods(backend, backend_config):
     if backend == 'gce':
         return GcloudResourceMethods(backend_config)
     else:
-        return ResourceMethods
+        return ResourceMethods()
 

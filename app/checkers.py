@@ -81,6 +81,6 @@ class CheckRequestGcloud(CheckRequest):
 
 def generate_request_checker(backend):
     if backend == 'gce':
-        return CheckRequestGcloud
+        return CheckRequestGcloud()
     else:
-        return CheckRequest
+        return CheckRequest()
