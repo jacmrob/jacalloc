@@ -14,7 +14,7 @@ jobs:
       - run: echo $DEV_SVC_ACCT | base64 --decode --ignore-garbage > ${HOME}/broad-dsde-dev.json
       - run: docker-compose -f inttests-gce-compose.yml up -d
       - run: sudo pip install requests
-      - run: cd repo/app/test
+      - run: cd app/test
       - run: sudo python -m unittest apitests.TestCreateApiGcloud
       - run: sudo python -m unittest apitests.TestDependentApiGcloud
       - run: cd ~/repo
@@ -28,7 +28,7 @@ jobs:
       - checkout
       - run: docker-compose -f inttests-compose.yml up -d
       - run: sudo pip install requests
-      - run: cd repo/app/test
+      - run: cd app/test
       - run: sudo python -m unittest apitests.TestCreateApi
       - run: sudo python -m unittest apitests.TestDependentApi
       - run: cd ~/repo
