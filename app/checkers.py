@@ -22,6 +22,11 @@ class CheckRequest:
             return reduce(lambda x,y: x or y, [lambda x: type(x) == y for y in types])
         return lambda x: type(x) == types
 
+    def if_can_update_attr(self, request_dict, resource):
+        if "in_use" in request_dict:
+            return resource.get("usable")
+        return True
+
     def concat_errors(self, error_dict):
         return reduce(lambda x,y: ' ; '.join([x,y]), [k for k,v in error_dict.iteritems() if not v], "")
 
@@ -52,6 +57,7 @@ class CheckRequest:
 
         errors = {"The following fields cannot be updated: {}".format(str(bad_fields)): len(bad_fields) == 0,
                   "The following fields are incorrectly typed {}".format(str(bad_types)): len(bad_types) == 0}
+
         return self.concat_errors(errors)
 
 

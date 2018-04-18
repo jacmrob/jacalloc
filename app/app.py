@@ -186,14 +186,16 @@ def api_update_resource(name):
         body = request.get_json()
         errors = check_request.check_request_update(body)
         if not errors:
-            try:
-
-                resource_methods.update_resource(name, body)
-                new = resource_methods.get_resource_by_name(name)
-                return json.dumps(new.map()), 200
-            except:
-                a, exc_value, _ = sys.exc_info()
-                errors = "Unable to update record for {0}: {1}".format(name, exc_value)
+            if not check_request.if_can_update_attr(body, resp):
+                return "Resource is not usable!  Cannot update.", 405
+            else:
+                try:
+                    resource_methods.update_resource(name, body)
+                    new = resource_methods.get_resource_by_name(name)
+                    return json.dumps(new.map()), 200
+                except:
+                    a, exc_value, _ = sys.exc_info()
+                    errors = "Unable to update record for {0}: {1}".format(name, exc_value)
         else:
             return str(errors), 400
 

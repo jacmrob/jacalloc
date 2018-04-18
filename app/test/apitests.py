@@ -11,6 +11,7 @@ HTTP_CONFLICT = 409
 HTTP_NOT_FOUND = 404
 HTTP_NO_CONTENT = 204
 HTTP_PRECONDITION_FAILED = 412
+HTTP_METHOD_NOT_ALLOWED = 405
 
 
 class TestCreateApi(unittest.TestCase):
@@ -186,6 +187,12 @@ class TestDependentApi(unittest.TestCase):
     def test_update_resource_not_found(self):
         resp = requests.post(self.base_url_resources + "/fake-resource", headers=self.headers, data=json.dumps({"usable": True}))
         self.assertEqual(resp.status_code, HTTP_NOT_FOUND)
+
+    def test_update_field_not_allowed(self):
+        resp = requests.post(self.base_url_resources + "/" + self.resource_name, headers=self.headers, data={"usable": False})
+        self.assertEqual(resp.status_code, HTTP_OK)
+        resp2 = requests.post(self.base_url_resources + "/" + self.resource_name, headers=self.headers, data={"in_use": True})
+        self.assertEqual(resp2.status_code, HTTP_METHOD_NOT_ALLOWED)
 
     # POST /resources/allocate
 
