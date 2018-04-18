@@ -186,7 +186,7 @@ def api_update_resource(name):
         body = request.get_json()
         errors = check_request.check_request_update(body)
         if not errors:
-            if not check_request.if_can_update_attr(body, resp):
+            if not check_request.if_can_update_attr(body, resp.map()):
                 return "Resource is not usable!  Cannot update.", 405
             else:
                 try:
