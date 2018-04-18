@@ -189,7 +189,7 @@ class TestDependentApi(unittest.TestCase):
         self.assertEqual(resp.status_code, HTTP_NOT_FOUND)
 
     def test_update_field_not_allowed(self):
-        resp = requests.post(self.base_url_resources + "/" + self.resource_name, headers=self.headers, data={"usable": False})
+        resp = requests.post(self.base_url_resources + "/" + self.resource_name, headers=self.headers, data=json.dumps({"usable": False}))
         self.assertEqual(resp.status_code, HTTP_OK)
         resp2 = requests.post(self.base_url_resources + "/" + self.resource_name, headers=self.headers, data={"in_use": True})
         self.assertEqual(resp2.status_code, HTTP_METHOD_NOT_ALLOWED)
