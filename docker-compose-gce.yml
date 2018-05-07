@@ -20,6 +20,7 @@ services:
     volumes:
       - ./startup.sh:/app/startup.sh:ro
       - ./app:/app
+      # Customize these for custom gcloud projects
       - ./broad-dsde-dev.json:/app/broad-dsde-dev.json:ro
       - ./broad-dsde-dev.env:/app/broad-dsde-dev.env:ro
     depends_on:
@@ -29,6 +30,7 @@ services:
     working_dir: /app
     entrypoint: ["./startup.sh"]
 
+  # Remove this when running a custom gcloud project
   tests:
     image: broadinstitute/python-requests:2.7
     volumes:
