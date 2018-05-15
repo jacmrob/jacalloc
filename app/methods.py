@@ -121,7 +121,7 @@ class GcloudInstanceResourceMethods(GcloudResourceMethods):
                         ResourceMethods.delete_resource(self, name)
                     return None
                 else:
-                    raise StandardError("Something went wrong during instance get.")
+                    raise StandardError("Something went wrong during instance get. Status: {0}".format(e.resp.status))
         else:
             print "[DEBUG] Cannot fetch resource; no gcloud credentials for project {0}".format(self.project)
             return None
@@ -170,7 +170,8 @@ class GcloudInstanceResourceMethods(GcloudResourceMethods):
                 if e.resp.status == 409:
                     raise StandardError("Error! instance {0} already exists in gcloud.".format(body["name"]))
                 else:
-                    raise StandardError("Something went wrong during instance creation.")
+                    raise StandardError("Something went wrong during instance creation: {0}: {1}. \n".format(
+                        e.resp.status, e.resp.reason), e.content)
         else:
             raise StandardError("Cannot create resource; no gcloud credentials for project {0}".format(self.project))
 

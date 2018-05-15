@@ -23,8 +23,7 @@ def create_instance(compute, project, zone, name, tags, disk_size="100", disk_ty
     image_response = compute.images().getFromFamily(
         project='ubuntu-os-cloud', family='ubuntu-1604-lts').execute()
     source_disk_image = image_response['selfLink']
-    network = 'default' if project == 'broad-dsde-qa' else 'managed'
-
+    network = 'managed' if project == 'broad-dsde-dev' else 'default'
 
     config = {
         'name': name,
