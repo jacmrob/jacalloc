@@ -2,6 +2,11 @@ Creates a new resource
 ---
 tags:
   - Jacalloc API
+security:
+  - authorization:
+      - openid
+      - email
+      -profile
 responses:
   '201':
     description: Resource successfully created

@@ -31,6 +31,7 @@ class GcloudConfig(Config):
 class GcloudProjConfig():
     def __init__(self, project_name):
         dotenv.load_dotenv(dotenv.find_dotenv(project_name + ".env"))
+        #TODO: this is not secure!!! :( fix with oauth
         self.compute = create_compute_instance_from_json_creds(os.getenv("SVC_ACCT_PATH"))
         self.zone = os.getenv("ZONE")
         self.project = project_name

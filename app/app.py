@@ -10,8 +10,20 @@ from models import db
 from methods import generate_resource_methods
 from checkers import generate_request_checker
 
+swagger_template = {
+    # Other settings
+
+    'securityDefinitions': {
+        'authorization': {
+            'type': 'basic'
+        }
+    },
+
+    # Other settings
+}
+
 app = Flask(__name__)
-Swagger(app)
+Swagger(app, template=swagger_template)
 app.config.from_object('config.Config')
 db.init_app(app)
 backend_config = generate_config(app.config['RESOURCE_BACKEND'])
