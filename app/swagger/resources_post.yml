@@ -6,7 +6,7 @@ security:
   - authorization:
       - openid
       - email
-      -profile
+      - profile
 responses:
   '201':
     description: Resource successfully created

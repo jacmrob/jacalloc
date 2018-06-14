@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, abort
 import json
 import sys
 from sqlalchemy import exc
@@ -6,6 +6,7 @@ from flasgger import Swagger
 from flasgger.utils import swag_from
 from config import generate_config
 from models import db
+from backends.gcloud import validate_token
 
 from methods import generate_resource_methods
 from checkers import generate_request_checker
@@ -15,20 +16,82 @@ swagger_template = {
 
     'securityDefinitions': {
         'authorization': {
-            'type': 'basic'
+            'type': 'oauth2',
+            'authorizationUrl': 'https://accounts.google.com/o/oauth2/auth',
+            'flow': 'implicit',
+            'scopes': {
+                'openid': 'open id authorization',
+                'email': 'email authorization',
+                'profile': 'profile authorization'
+            }
         }
-    },
+    }
 
     # Other settings
 }
 
+swagger_config = {
+    "headers": [
+    ],
+    "specs": [
+        {
+            "endpoint": 'apispec_1',
+            "route": '/apispec_1.json',
+            "rule_filter": lambda rule: True,  # all in
+            "model_filter": lambda tag: True,  # all in
+        }
+    ],
+    "static_url_path": "/flasgger_static",
+    # "static_folder": "static",  # must be set by user
+    "swagger_ui": True,
+    "specs_route": "/apidocs/"
+}
+
 app = Flask(__name__)
-Swagger(app, template=swagger_template)
 app.config.from_object('config.Config')
+Swagger(app, config=swagger_config, template=swagger_template)
 db.init_app(app)
 backend_config = generate_config(app.config['RESOURCE_BACKEND'])
 resource_methods = generate_resource_methods(app.config['RESOURCE_BACKEND'], backend_config)
 check_request = generate_request_checker(app.config['RESOURCE_BACKEND'])
+
+
+## Authentication & Authorization ##
+
+def authorized(fn):
+    """Decorator that checks that requests
+    contain an id-token in the request header.
+    userid will be None if the
+    authentication failed, and have an id otherwise.
+
+    Usage:
+    @app.route("/")
+    @authorized
+    def secured_root(userid=None):
+        pass
+    """
+
+    def _wrap(*args, **kwargs):
+        if app.config['RESOURCE_BACKEND'] == 'gce':
+            if 'Authorization' not in request.headers:
+                # Unauthorized
+                print("No token in header")
+                abort(401)
+                return None
+
+            print("Checking token...")
+            projects = backend_config.projects.keys()
+            userid = validate_token(request.headers['Authorization'], projects)
+            print userid
+            if not userid:
+                print("Check returned FAIL!")
+                # Unauthorized
+                abort(401)
+                return None
+
+            return fn(*args, **kwargs)
+    return _wrap
+
 
 ## Routes ##
 
@@ -50,6 +113,7 @@ def api_health():
 @app.route('/resources', methods=['GET', 'POST'])
 @swag_from('swagger/resources_get.yml', methods=['GET'])
 @swag_from('swagger/resources_post.yml', methods=['POST'])
+@authorized
 def api_create_resource():
     print resource_methods
 

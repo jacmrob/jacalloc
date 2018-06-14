@@ -2,6 +2,11 @@ Gets all resources
 ---
 tags:
   - Jacalloc API
+security:
+  - authorization:
+      - openid
+      - email
+      - profile
 responses:
   '200':
     description: Successful request

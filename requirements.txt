@@ -6,3 +6,4 @@ flasgger
 python-dotenv
 google-api-python-client
 requests
+oauth2client

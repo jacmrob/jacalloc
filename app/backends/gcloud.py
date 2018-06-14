@@ -2,6 +2,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 from googleapiclient.discovery import build
 import sys, os
 import time
+import requests
 
 
 # return the credentials of a service account
@@ -144,3 +145,20 @@ def wait_for_operation(compute, project, zone, operation):
             sys.stdout.write('.')
             sys.stdout.flush()
             time.sleep(1)
+
+
+def validate_token(access_token, project):
+    '''Verifies that an access-token is valid and
+    meant for this app.
+
+    Returns None on fail, and an e-mail on success'''
+    resp = requests.get("https://www.googleapis.com/oauth2/v2/userinfo",
+                           headers={'Host': 'www.googleapis.com',
+                                    'Authorization': access_token})
+    # TODO: check gcloud scopes in given google proj
+
+    if not resp.status_code == 200:
+        print("Token validation returned status {0}".format(resp.status_code))
+        return None
+
+    return resp.json()['email']
