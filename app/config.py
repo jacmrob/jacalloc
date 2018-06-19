@@ -1,5 +1,5 @@
 import sys, os
-from backends.gcloud import create_compute_instance_from_json_creds
+from backends.gcloud import create_compute_instance_from_json_creds, is_compute_editor
 import dotenv
 
 # Flask config.py
@@ -9,11 +9,15 @@ class Config():
     SQLALCHEMY_TRACK_MODIFICATIONS = True
     RESOURCE_BACKEND = os.environ.get('RESOURCE_BACKEND') or 'default'
     RESOURCE_TYPE = os.environ.get('RESOURCE_TYPE') or 'default'
+    OAUTH_PROJECT = os.environ.get('OAUTH_PROJECT') or None
     ROOT_DIR = os.environ.get("ROOT_DIR") or "/app"
     ALL_FIELDS = ["name", "ip", "project", "in_use", "private"]
     REQUIRED_FIELDS = ["name", "ip", "project", "in_use"]
     SWAGGER = {"title": "jacalloc",
                "uiversion": 2}
+
+    def is_authorized(self):
+        return True
 
 
 class GcloudConfig(Config):
@@ -28,6 +32,9 @@ class GcloudConfig(Config):
                     p_name = f.split(".")[0]
                     projects[p_name] = GcloudProjConfig(p_name)
         return projects
+
+    def is_authorized(self, *args, **kwargs):
+        return is_compute_editor(*args, **kwargs)
 
 
 class GcloudProjConfig():

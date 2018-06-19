@@ -4,9 +4,11 @@ tags:
   - Jacalloc API
 security:
   - authorization:
-      - openid
+      - https://www.googleapis.com/auth/cloud-platform
       - email
       - profile
+produces:
+  - application/json
 responses:
   '201':
     description: Resource successfully created

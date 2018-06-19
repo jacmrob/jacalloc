@@ -1,0 +1,31 @@
+Gets all allocated resources that have timed out
+---
+tags:
+  - Jacalloc API
+security:
+  - authorization:
+      - https://www.googleapis.com/auth/cloud-platform
+      - email
+      - profile
+responses:
+  '200':
+    description: List of resources
+  '500':
+    description: Something went wrong during fetch
+parameters:
+  - in: query
+    description: Resource project
+    name: project
+    required: false
+    type: string
+  - in: query
+    description: If resource private
+    name: private
+    required: false
+    enum: ["true","false"]
+  - in: query
+    description: Amount of time (in seconds) in_use to filter resources by
+    name: timeout
+    required: false
+    type: integer
+    minimum: 1

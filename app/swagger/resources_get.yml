@@ -1,12 +1,15 @@
-Gets all resources
+Lists resources
 ---
+operationId: get_resources
 tags:
   - Jacalloc API
 security:
   - authorization:
-      - openid
+      - https://www.googleapis.com/auth/cloud-platform
       - email
       - profile
+produces:
+  - application/json
 responses:
   '200':
     description: Successful request

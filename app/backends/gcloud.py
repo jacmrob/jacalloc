@@ -147,7 +147,7 @@ def wait_for_operation(compute, project, zone, operation):
             time.sleep(1)
 
 
-def validate_token(access_token, project):
+def validate_token(access_token):
     '''Verifies that an access-token is valid and
     meant for this app.
 
@@ -155,10 +155,23 @@ def validate_token(access_token, project):
     resp = requests.get("https://www.googleapis.com/oauth2/v2/userinfo",
                            headers={'Host': 'www.googleapis.com',
                                     'Authorization': access_token})
-    # TODO: check gcloud scopes in given google proj
 
+    print resp.json()
+    print access_token
     if not resp.status_code == 200:
         print("Token validation returned status {0}".format(resp.status_code))
         return None
 
     return resp.json()['email']
+
+
+def is_compute_editor(access_token, project):
+    '''Verifies that the user linked to an access-token has the right
+    permissions to create and delete compute instances in the given project
+
+    Returns False on fail, and True on success'''
+    resp = requests.post("https://cloudresourcemanager.googleapis.com/v1beta1/projects/{0}:testIamPermissions"
+                         .format(project),
+                         headers={"Authorization": access_token},
+                         data={"permissions": ["compute.instances.create"]})
+    return resp.status_code == 200

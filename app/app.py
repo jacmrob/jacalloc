@@ -20,7 +20,7 @@ swagger_template = {
             'authorizationUrl': 'https://accounts.google.com/o/oauth2/auth',
             'flow': 'implicit',
             'scopes': {
-                'openid': 'open id authorization',
+                'https://www.googleapis.com/auth/cloud-platform': 'cloud platform authorization',
                 'email': 'email authorization',
                 'profile': 'profile authorization'
             }
@@ -47,6 +47,7 @@ swagger_config = {
     "specs_route": "/apidocs/"
 }
 
+
 app = Flask(__name__)
 app.config.from_object('config.Config')
 Swagger(app, config=swagger_config, template=swagger_template)
@@ -72,24 +73,30 @@ def authorized(fn):
     """
 
     def _wrap(*args, **kwargs):
+
+        if 'Authorization' not in request.headers:
+            # Unauthorized
+            print("No token in header")
+            abort(401)
+            return None
+
+        print("Checking token...")
+        userid = validate_token(request.headers['Authorization'])
+        print userid
+        if not userid:
+            print("Authentication returned FAIL!")
+            # Unauthorized
+            abort(401)
+            return None
         if app.config['RESOURCE_BACKEND'] == 'gce':
-            if 'Authorization' not in request.headers:
-                # Unauthorized
-                print("No token in header")
-                abort(401)
-                return None
-
-            print("Checking token...")
-            projects = backend_config.projects.keys()
-            userid = validate_token(request.headers['Authorization'], projects)
-            print userid
-            if not userid:
-                print("Check returned FAIL!")
+            if not backend_config.is_authorized(request.headers['Authorization'], app.config['OAUTH_PROJECT']):
+                print("Authorization returned FAIL!")
                 # Unauthorized
                 abort(401)
                 return None
 
-            return fn(*args, **kwargs)
+        return fn(*args, **kwargs)
+    _wrap.func_name = fn.func_name
     return _wrap
 
 
@@ -119,7 +126,7 @@ def api_create_resource():
 
     if request.method == 'GET':
         resp = resource_methods.get_all_resources(in_use=request.args.get('in_use'), project=request.args.get('project'), private=request.args.get('private'))
-        return json.dumps(resp), 200
+        return jsonify(resp), 200
 
     elif request.method == 'POST':
         body = request.get_json()
@@ -149,29 +156,9 @@ def api_create_resource():
 
 
 @app.route('/resources/<name>', methods=['GET'])
+@swag_from('swagger/resources_get_single.yml', methods=['GET'])
+@authorized
 def api_get_resource(name):
-    '''
-    Gets a resource
-    ---
-    tags:
-      - Jacalloc API
-    responses:
-      '200':
-        description: Resource found
-      '404':
-        description: Resource not found
-    parameters:
-      - in: path
-        description: resource name
-        name: name
-        required: true
-        type: string
-      - in: query
-        description: Resource project
-        name: project
-        required: false
-        type: string
-    '''
     try:
         resp = resource_methods.get_resource_by_name(name, project=request.args.get('project'))
         if resp:
@@ -185,26 +172,9 @@ def api_get_resource(name):
 
 
 @app.route('/resources/name/<keyword>', methods=['GET'])
+@swag_from('swagger/resources_get_on_kwd.yml', methods=['GET'])
+@authorized
 def api_get_by_search(keyword):
-    '''
-    Gets all resources on a keyword
-    ---
-    tags:
-      - Jacalloc API
-    responses:
-      '200':
-        description: Resource(s) found matching request
-      '404':
-        description: No resource(s) found matching request
-      '400':
-        description: Resource request malformed
-    parameters:
-      - in: path
-        description: keyword to search on
-        name: keyword
-        required: true
-        type: string
-    '''
     try:
         resp = resource_methods.list_resources_by_keyword(keyword)
         if resp:
@@ -217,41 +187,9 @@ def api_get_by_search(keyword):
 
 
 @app.route('/resources/<name>', methods=['POST'])
+@swag_from('swagger/resources_post_name.yml', methods=['POST'])
+@authorized
 def api_update_resource(name):
-    '''
-    Updates a resource
-    ---
-    tags:
-      - Jacalloc API
-    responses:
-      '200':
-        description: Resource successfully updated
-      '400':
-        description: Malformed request
-      '404':
-        description: Resource not found
-    parameters:
-      - in: path
-        description: Resource name
-        name: name
-        required: true
-        type: string
-      - in: body
-        name: body
-        required: true
-        schema:
-          properties:
-            ip:
-              type: string
-              description: Resource IP
-            project:
-              type: string
-              description: Resource project
-            in_use:
-              type: string
-              enum: ["true", "false"]
-              description: Resource status
-    '''
     try:
         request.get_json()
     except:
@@ -284,24 +222,9 @@ def api_update_resource(name):
 
 
 @app.route('/resources/<name>', methods=['DELETE'])
+@swag_from('swagger/resources_delete.yml', methods=['DELETE'])
+@authorized
 def api_delete_resource(name):
-    '''
-    Deletes a resource
-    ---
-    tags:
-      - Jacalloc API
-    responses:
-      '201':
-        description: Resource successfully deleted
-      '500':
-        description: Resource delete failed
-    parameters:
-      - in: path
-        description: Resource name
-        name: name
-        required: true
-        type: string
-    '''
     try:
         resource_methods.delete_resource(name)
         return "Deleted resource {0}".format(name), 204
@@ -311,27 +234,9 @@ def api_delete_resource(name):
 
 
 @app.route('/resources/allocate', methods=['POST'])
+@swag_from('swagger/resources_allocate.yml', methods=['POST'])
+@authorized
 def api_allocate():
-    '''
-    Allocates a resource
-    Chooses a random resource where in_use == False and sets in_use = True
-    ---
-    tags:
-      - Jacalloc API
-    responses:
-      '200':
-        description: Resource successfully allocated
-      '412':
-        description: No resources are free to allocate
-      '500':
-        description: Resource allocation failed
-    parameters:
-      - in: query
-        description: Resource project
-        name: project
-        required: false
-        type: string
-    '''
 
     free = resource_methods.get_all_resources(in_use="false", project=request.args.get('project'),
                                               private="false", usable="true")
@@ -349,35 +254,9 @@ def api_allocate():
 
 
 @app.route('/resources/allocate/timeout', methods=['GET'])
+@swag_from('swagger/resources_allocate_timeout.yml', methods=['GET'])
+@authorized
 def api_get_timeouts():
-    '''
-    Gets all allocated resources that have timed out
-    ---
-    tags:
-      - Jacalloc API
-    responses:
-      '200':
-        description: List of resources
-      '500':
-        description: Something went wrong during fetch
-    parameters:
-      - in: query
-        description: Resource project
-        name: project
-        required: false
-        type: string
-      - in: query
-        description: If resource private
-        name: private
-        required: false
-        enum: ["true","false"]
-      - in: query
-        description: Amount of time (in seconds) in_use to filter resources by
-        name: timeout
-        required: false
-        type: integer
-        minimum: 1
-    '''
     try:
         r = resource_methods.get_all_resources(in_use="true",
                                                project=request.args.get("project"),

@@ -1,0 +1,24 @@
+Gets all resources on a keyword
+---
+tags:
+  - Jacalloc API
+security:
+  - authorization:
+      - https://www.googleapis.com/auth/cloud-platform
+      - email
+      - profile
+produces:
+  - application/json
+responses:
+  '200':
+    description: Resource(s) found matching request
+  '404':
+    description: No resource(s) found matching request
+  '400':
+    description: Resource request malformed
+parameters:
+  - in: path
+    description: keyword to search on
+    name: keyword
+    required: true
+    type: string
