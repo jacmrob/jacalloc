@@ -3,6 +3,8 @@ import requests
 import uuid
 import json
 import time
+from httplib2 import Http
+from oauth2client.service_account import ServiceAccountCredentials
 
 HTTP_OK = 200
 HTTP_CREATED = 201
@@ -14,6 +16,26 @@ HTTP_PRECONDITION_FAILED = 412
 HTTP_METHOD_NOT_ALLOWED = 405
 
 
+def get_user_token(user_email, json_keyfile_dict):
+
+    user_email = user_email
+    scopes = ['profile', 'email', 'https://www.googleapis.com/auth/cloud-platform']
+
+    credentials = ServiceAccountCredentials.from_json_keyfile_dict(
+       json_keyfile_dict, scopes=scopes)
+
+    delegated = credentials.create_delegated(user_email)
+    delegated.refresh(Http())
+    token = delegated.access_token
+    return token
+
+
+def json_to_dict(fp):
+    with open(fp, 'rb') as f:
+        data = json.load(f)
+    return data
+
+
 class TestCreateApi(unittest.TestCase):
     """Class for testing basic resource create/destroy functionality.
     Must run before TestDependentApi to ensure we can create/destroy resources to test with."""
@@ -22,10 +44,13 @@ class TestCreateApi(unittest.TestCase):
         self.base_url = 'http://app:5000/'
         self.base_url_resources = self.base_url + 'resources'
         self.resource_name = "testapi" + str(uuid.uuid1())[:15]
+        self.delegated_user = "hermione.owner@test.firecloud.org"
+        self.token = get_user_token(self.delegated_user, json_to_dict('/test/broad-dsde-dev.json'))
         self.create_body = {"ip": "0.0.0.0",
                             "project": "apitests",
                             "in_use": False}
-        self.headers = {"Content-Type": "application/json"}
+        self.headers = {"Content-Type": "application/json", "Authentication": "Bearer " + self.token}
+
 
     def create_record_body(self):
         body = self.create_body.copy()
@@ -79,11 +104,13 @@ class TestDependentApi(unittest.TestCase):
         cls.base_url_resources = cls.base_url + 'resources'
         cls.resource_name = "testallocatorapi-" + str(uuid.uuid1())[:15]
         cls.project = 'apitests'
+        cls.delegated_user = "jroberti@broadinstitute.org"
+        cls.token = get_user_token(cls.delegated_user, json_to_dict('/test/broad-dsde-dev.json'))
         cls.create_body = {"name": cls.resource_name,
                             "ip": "0.0.0.0",
                             "project": cls.project,
                             "in_use": False}
-        cls.headers = {"Content-Type": "application/json"}
+        cls.headers = {"Content-Type": "application/json", "Authorization": "Bearer " + cls.token}
         init_resp = requests.post(cls.base_url_resources, data=json.dumps(cls.create_body), headers=cls.headers)
         assert init_resp.status_code == HTTP_CREATED
 
@@ -250,11 +277,13 @@ class TestCreateApiGcloud(TestCreateApi):
     def setUp(self):
         self.base_url = 'http://app:5000/'
         self.base_url_resources = self.base_url + 'resources'
+        self.delegated_user = "hermione.owner@test.firecloud.org"
+        self.token = get_user_token(self.delegated_user, json_to_dict('/test/broad-dsde-dev.json'))
         self.create_body = {"tags": ["jacalloc-tests"],
                             "project": "broad-dsde-dev",
                             "in_use": False,
                             "zone": "us-central1-a"}
-        self.headers = {"Content-Type": "application/json"}
+        self.headers = {"Content-Type": "application/json", "Authorization": "Bearer " + self.token}
 
 
 class TestDependentApiGcloud(TestDependentApi):
@@ -263,14 +292,16 @@ class TestDependentApiGcloud(TestDependentApi):
     def setUpClass(cls):
         cls.base_url = 'http://app:5000/'
         cls.base_url_resources = cls.base_url + 'resources'
-        cls.headers = {"Content-Type": "application/json"}
         cls.project = "broad-dsde-dev"
         cls.resource_name = "testallocatorapi-" + str(uuid.uuid1())[:15]
+        cls.delegated_user = "jroberti@broadinstitute.org"
+        cls.token = get_user_token(cls.delegated_user, json_to_dict('/test/broad-dsde-dev.json'))
         cls.create_body = {"name": cls.resource_name,
                         "tags": ["jacalloc-tests"],
                         "project": cls.project,
                         "in_use": False,
                         "zone": "us-central1-a"}
+        cls.headers = {"Content-Type": "application/json", "Authorization": "Bearer " + cls.token}
 
         init_resp = requests.post(cls.base_url_resources, data=json.dumps(cls.create_body), headers=cls.headers)
         assert init_resp.status_code == HTTP_CREATED

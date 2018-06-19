@@ -122,8 +122,7 @@ def api_health():
 @swag_from('swagger/resources_post.yml', methods=['POST'])
 @authorized
 def api_create_resource():
-    print resource_methods
-
+    print backend_config.projects
     if request.method == 'GET':
         resp = resource_methods.get_all_resources(in_use=request.args.get('in_use'), project=request.args.get('project'), private=request.args.get('private'))
         return jsonify(resp), 200

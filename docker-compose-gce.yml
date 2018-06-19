@@ -37,7 +37,8 @@ services:
     image: broadinstitute/python-requests:2.7
     volumes:
       - ./app/test:/test
-      - ./test-startup-gce.sh:/test/test-startup-gce.sh
+      - ./test-startup-gce.sh:/test/test-startup-gce.sh:ro
+      - ./broad-dsde-dev.json:/test/broad-dsde-dev.json:ro
     depends_on:
       - app
       - postgres
