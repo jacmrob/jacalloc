@@ -104,7 +104,7 @@ class TestDependentApi(unittest.TestCase):
         cls.base_url_resources = cls.base_url + 'resources'
         cls.resource_name = "testallocatorapi-" + str(uuid.uuid1())[:15]
         cls.project = 'apitests'
-        cls.delegated_user = "jroberti@broadinstitute.org"
+        cls.delegated_user = "hermione.owner@test.firecloud.org"
         cls.token = get_user_token(cls.delegated_user, json_to_dict('/test/broad-dsde-dev.json'))
         cls.create_body = {"name": cls.resource_name,
                             "ip": "0.0.0.0",
@@ -294,7 +294,7 @@ class TestDependentApiGcloud(TestDependentApi):
         cls.base_url_resources = cls.base_url + 'resources'
         cls.project = "broad-dsde-dev"
         cls.resource_name = "testallocatorapi-" + str(uuid.uuid1())[:15]
-        cls.delegated_user = "jroberti@broadinstitute.org"
+        cls.delegated_user = "hermione.owner@test.firecloud.org"
         cls.token = get_user_token(cls.delegated_user, json_to_dict('/test/broad-dsde-dev.json'))
         cls.create_body = {"name": cls.resource_name,
                         "tags": ["jacalloc-tests"],

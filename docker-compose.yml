@@ -17,6 +17,7 @@ services:
     environment:
       POSTGRES_URL: 'postgresql://jacalloc:jacalloc123@postgres:5432/jacalloc'
       PYTHONUNBUFFERED: 0
+      OAUTH_PROJECT: 'broad-dsde-dev'
 
     volumes:
       - ./startup.sh:/app/startup.sh:ro
@@ -32,7 +33,8 @@ services:
     image: broadinstitute/python-requests:2.7
     volumes:
       - ./app/test:/test
-      - ./test-startup.sh:/test/test-startup.sh
+      - ./test-startup.sh:/test/test-startup.sh:ro
+      - ./broad-dsde-dev.json:/test/broad-dsde-dev.json:ro
     depends_on:
       - app
       - postgres
