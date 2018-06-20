@@ -262,11 +262,11 @@ class TestDependentApi(unittest.TestCase):
 
     def test_update_resource_unauthed(self):
         # no token
-        resp = requests.post(self.base_url_resources + "/" + self.resource_names, headers={"Content-Type": "application/json"}, data=json.dumps({"usable": True}))
+        resp = requests.post(self.base_url_resources + "/" + self.resource_name, headers={"Content-Type": "application/json"}, data=json.dumps({"usable": True}))
         self.assertEqual(resp.status_code, HTTP_UNAUTHORIZED)
 
         # bad token
-        resp = requests.post(self.base_url_resources + "/" + self.resource_names, headers={"Content-Type": "application/json", "Authorization": "Bearer balskdjflaskdjflawbadtoken"}, data=json.dumps({"usable": True}))
+        resp = requests.post(self.base_url_resources + "/" + self.resource_name, headers={"Content-Type": "application/json", "Authorization": "Bearer balskdjflaskdjflawbadtoken"}, data=json.dumps({"usable": True}))
         self.assertEqual(resp.status_code, HTTP_UNAUTHORIZED)
 
     # POST /resources/allocate
