@@ -9,6 +9,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 HTTP_OK = 200
 HTTP_CREATED = 201
 HTTP_BAD_REQUEST = 400
+HTTP_UNAUTHORIZED = 401
 HTTP_CONFLICT = 409
 HTTP_NOT_FOUND = 404
 HTTP_NO_CONTENT = 204
@@ -93,6 +94,16 @@ class TestCreateApi(unittest.TestCase):
         delete = requests.delete(self.base_url_resources + "/" + create["name"], headers=self.headers)
         self.assertEqual(delete.status_code, HTTP_NO_CONTENT)
 
+    def test_create_resource_unauthed(self):
+        create = self.create_record_body()
+        # no token
+        resp = requests.post(self.base_url_resources, data=json.dumps(create), headers={"Content-Type": "application/json"})
+        self.assertEqual(resp.status_code, HTTP_UNAUTHORIZED)
+
+        # bad token
+        resp = requests.post(self.base_url_resources, data=json.dumps(create), headers={"Content-Type": "application/json", "Authorization": "Bearer balskdjflaskdjflawbadtoken"})
+        self.assertEqual(resp.status_code, HTTP_UNAUTHORIZED)
+
 
 class TestDependentApi(unittest.TestCase):
     """
@@ -124,7 +135,7 @@ class TestDependentApi(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        delete_resp = requests.delete(cls.base_url_resources + "/" + cls.resource_name)
+        delete_resp = requests.delete(cls.base_url_resources + "/" + cls.resource_name, headers=cls.headers)
         assert delete_resp.status_code == HTTP_NO_CONTENT
 
     def create_record_body(self):
@@ -161,6 +172,15 @@ class TestDependentApi(unittest.TestCase):
         delete = requests.delete(self.base_url_resources + "/" + new_body["name"], headers=self.headers)
         self.assertEqual(delete.status_code, HTTP_NO_CONTENT)
 
+    def test_get_resources_unauthed(self):
+        # no token
+        resp = requests.get(self.base_url_resources, headers={"Content-Type": "application/json"})
+        self.assertEqual(resp.status_code, HTTP_UNAUTHORIZED)
+
+        # bad token
+        resp = requests.get(self.base_url_resources, headers={"Content-Type": "application/json", "Authorization": "Bearer balskdjflaskdjflawbadtoken"})
+        self.assertEqual(resp.status_code, HTTP_UNAUTHORIZED)
+
     # GET /resources/<name>
     # 200
     def test_get_resource(self):
@@ -184,6 +204,15 @@ class TestDependentApi(unittest.TestCase):
         resp = requests.get(self.base_url_resources + "/" + self.resource_name, headers=self.headers, params={"project": "not-a-real-proj"})
         self.assertEqual(resp.status_code, HTTP_NOT_FOUND)
 
+    def test_get_resource_unauthed(self):
+        # no token
+        resp = requests.get(self.base_url_resources + "/" + self.resource_name, headers={"Content-Type": "application/json"})
+        self.assertEqual(resp.status_code, HTTP_UNAUTHORIZED)
+
+        # bad token
+        resp = requests.get(self.base_url_resources + "/" + self.resource_name, headers={"Content-Type": "application/json", "Authorization": "Bearer balskdjflaskdjflawbadtoken"})
+        self.assertEqual(resp.status_code, HTTP_UNAUTHORIZED)
+
     # GET /resources/name/<keyword>
     def test_get_resource_by_keyword(self):
         resp = requests.get(self.base_url_resources + "/name/testallocatorapi", headers=self.headers)
@@ -193,6 +222,15 @@ class TestDependentApi(unittest.TestCase):
         resp = requests.get(self.base_url_resources + "/name/nonexistantasdfjhkjsh", headers=self.headers)
         self.assertEqual(resp.json(), [])
         self.assertEqual(resp.status_code, HTTP_OK)
+
+    def test_get_resource_by_keyword_unauthed(self):
+        # no token
+        resp = requests.get(self.base_url_resources + "/name/testallocatorapi", headers={"Content-Type": "application/json"})
+        self.assertEqual(resp.status_code, HTTP_UNAUTHORIZED)
+
+        # bad token
+        resp = requests.get(self.base_url_resources + "/name/testallocatorapi", headers={"Content-Type": "application/json", "Authorization": "Bearer balskdjflaskdjflawbadtoken"})
+        self.assertEqual(resp.status_code, HTTP_UNAUTHORIZED)
 
     # POST /resources/<name>
     def test_update_resource(self):
@@ -221,6 +259,15 @@ class TestDependentApi(unittest.TestCase):
         self.assertEqual(resp.status_code, HTTP_OK)
         resp2 = requests.post(self.base_url_resources + "/" + self.resource_name, headers=self.headers, data=json.dumps({"in_use": True}))
         self.assertEqual(resp2.status_code, HTTP_METHOD_NOT_ALLOWED)
+
+    def test_update_resource_unauthed(self):
+        # no token
+        resp = requests.post(self.base_url_resources + "/" + self.resource_names, headers={"Content-Type": "application/json"}, data=json.dumps({"usable": True}))
+        self.assertEqual(resp.status_code, HTTP_UNAUTHORIZED)
+
+        # bad token
+        resp = requests.post(self.base_url_resources + "/" + self.resource_names, headers={"Content-Type": "application/json", "Authorization": "Bearer balskdjflaskdjflawbadtoken"}, data=json.dumps({"usable": True}))
+        self.assertEqual(resp.status_code, HTTP_UNAUTHORIZED)
 
     # POST /resources/allocate
 
@@ -255,6 +302,15 @@ class TestDependentApi(unittest.TestCase):
 
     def test_allocate_within_false_project(self):
         self.allocate_and_free(self.resource_name, parameters={"project": "not-a-real-proj"}, allocate_status=HTTP_PRECONDITION_FAILED)
+
+    def test_allocate_unauthed(self):
+        # no token
+        resp = requests.post(self.base_url_resources + "/allocate", headers={"Content-Type": "application/json"})
+        self.assertEqual(resp.status_code, HTTP_UNAUTHORIZED)
+
+        # bad token
+        resp = requests.post(self.base_url_resources + "/allocate", headers={"Content-Type": "application/json", "Authorization": "Bearer balskdjflaskdjflawbadtoken"})
+        self.assertEqual(resp.status_code, HTTP_UNAUTHORIZED)
 
     # def test_allocate_resource_no_resources(self):
     #     r = requests.get(self.base_url_resources, headers=self.headers, params={"in_use": False}).json()
