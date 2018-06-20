@@ -115,8 +115,9 @@ class TestDependentApi(unittest.TestCase):
         assert init_resp.status_code == HTTP_CREATED
 
     def setUp(self):
+        self.token = get_user_token(TestDependentApi.delegated_user, json_to_dict('/test/broad-dsde-dev.json'))
+        self.headers = {"Content-Type": "application/json", "Authorization": "Bearer " + self.token}
         self.base_url_resources = TestDependentApi.base_url_resources
-        self.headers = TestDependentApi.headers
         self.project = TestDependentApi.project
         self.resource_name = TestDependentApi.resource_name
         self.create_body = TestDependentApi.create_body
@@ -233,7 +234,7 @@ class TestDependentApi(unittest.TestCase):
         self.assertEqual(resp1.status_code, HTTP_OK)
         self.assertTrue(resp1.json()["usable"])
 
-        resp2 = requests.post(self.base_url_resources + "/allocate", params=parameters)
+        resp2 = requests.post(self.base_url_resources + "/allocate", headers=self.headers, params=parameters)
         self.assertEqual(resp2.status_code, allocate_status)
         r = None
         if allocate_status == HTTP_OK:
@@ -256,18 +257,18 @@ class TestDependentApi(unittest.TestCase):
         self.allocate_and_free(self.resource_name, parameters={"project": "not-a-real-proj"}, allocate_status=HTTP_PRECONDITION_FAILED)
 
     # def test_allocate_resource_no_resources(self):
-    #     r = requests.get(self.base_url_resources, params={"in_use": False}).json()
+    #     r = requests.get(self.base_url_resources, headers=self.headers, params={"in_use": False}).json()
     #     allocated = []
     #     while r:
     #         allocated.append(self.allocate(r.pop()["name"]))
-    #         r = requests.get(self.base_url_resources, params={"in_use": False}).json()
+    #         r = requests.get(self.base_url_resources, headers=self.headers, params={"in_use": False}).json()
     #     self.allocate(self.resource_name, allocate_status=HTTP_PRECONDITION_FAILED)
     #     self.free(allocated)
 
     def test_timed_out_list(self):
         allocated = self.allocate(self.resource_name)
         time.sleep(7)
-        timed_out = requests.get(self.base_url_resources + "/allocate/timeout", params={"project": self.project, "timeout": 4})
+        timed_out = requests.get(self.base_url_resources + "/allocate/timeout", headers=self.headers, params={"project": self.project, "timeout": 4})
         self.assert_record_is_in_list(timed_out.json(), allocated["name"])
         self.free(allocated)
 

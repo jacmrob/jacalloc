@@ -8,8 +8,6 @@ security:
       - https://www.googleapis.com/auth/cloud-platform
       - email
       - profile
-produces:
-  - application/json
 responses:
   '200':
     description: Successful request
