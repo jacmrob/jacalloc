@@ -49,7 +49,7 @@ class TestCreateApi(unittest.TestCase):
         self.create_body = {"ip": "0.0.0.0",
                             "project": "apitests",
                             "in_use": False}
-        self.headers = {"Content-Type": "application/json", "Authentication": "Bearer " + self.token}
+        self.headers = {"Content-Type": "application/json", "Authorization": "Bearer " + self.token}
 
 
     def create_record_body(self):
