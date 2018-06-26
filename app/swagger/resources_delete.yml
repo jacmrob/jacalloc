@@ -1,0 +1,20 @@
+Deletes a resource
+---
+tags:
+  - Jacalloc API
+security:
+  - authorization:
+      - https://www.googleapis.com/auth/cloud-platform
+      - email
+      - profile
+responses:
+  '201':
+    description: Resource successfully deleted
+  '500':
+    description: Resource delete failed
+parameters:
+  - in: path
+    description: Resource name
+    name: name
+    required: true
+    type: string

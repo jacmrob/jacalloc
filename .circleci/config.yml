@@ -4,17 +4,58 @@
 #
 version: 2
 jobs:
-  build:
-    docker:
-      # specify the version you desire here
-      # use `-browsers` prefix for selenium tests, e.g. `3.6.1-browsers`
-      - image: circleci/python:3.6.1
-      
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
-
+  test-gce:
+    machine: true
     working_directory: ~/repo
     steps:
       - checkout
+      - run:
+          name: Docker login
+          command: docker login -u $DOCKER_USER -p $DOCKER_PASS
+      - run:
+          name: get service acct
+          command: docker run -e VAULT_TOKEN=$VAULT_TOKEN broadinstitute/dsde-toolbox vault read -format=json secret/dsde/firecloud/dev/common/firecloud-account.json | jq '.data' > broad-dsde-dev.json
+      - run:
+          name: run integration tests
+          command: docker-compose -f docker-compose-gce.yml up --abort-on-container-exit
+
+  test-standard:
+    machine: true
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: get service acct
+          command: docker run -e VAULT_TOKEN=$VAULT_TOKEN broadinstitute/dsde-toolbox vault read -format=json secret/dsde/firecloud/dev/common/firecloud-account.json | jq '.data' > broad-dsde-dev.json
+      - run:
+          name: run integration tests
+          command: docker-compose -f docker-compose.yml up --abort-on-container-exit
+
+
+  docker-build:
+    machine: true
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+      - run:
+          name: build docker image
+          command: docker build -t jacmrob/jacalloc .
+      - run:
+          name: push docker image
+          command: docker push jacmrob/jacalloc
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - test-standard
+      - test-gce
+      - docker-build:
+          requires:
+            - test-standard
+            - test-gce
+          filters:
+            branches:
+              only:
+                - master

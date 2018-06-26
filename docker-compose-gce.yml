@@ -17,11 +17,15 @@ services:
     environment:
       POSTGRES_URL: 'postgresql://jacalloc:jacalloc123@postgres:5432/jacalloc'
       PYTHONUNBUFFERED: 0
+      RESOURCE_BACKEND: 'gce'
       OAUTH_PROJECT: 'broad-dsde-dev'
 
     volumes:
       - ./startup.sh:/app/startup.sh:ro
       - ./app:/app
+      # Customize these for custom gcloud projects
+      - ./broad-dsde-dev.json:/app/broad-dsde-dev.json:ro
+      - ./broad-dsde-dev.env:/app/broad-dsde-dev.env:ro
     depends_on:
       - postgres
     links:
@@ -29,15 +33,16 @@ services:
     working_dir: /app
     entrypoint: ["./startup.sh"]
 
+  # Remove this when running a custom gcloud project
   tests:
     image: broadinstitute/python-requests:2.7
     volumes:
       - ./app/test:/test
-      - ./test-startup.sh:/test/test-startup.sh:ro
+      - ./test-startup-gce.sh:/test/test-startup-gce.sh:ro
       - ./broad-dsde-dev.json:/test/broad-dsde-dev.json:ro
     depends_on:
       - app
       - postgres
     links:
       - app:app
-    entrypoint: bash /test/test-startup.sh
+    entrypoint: bash /test/test-startup-gce.sh

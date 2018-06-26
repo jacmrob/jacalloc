@@ -1,0 +1,23 @@
+Allocates a resource
+Chooses a random resource where in_use == False and sets in_use = True
+---
+tags:
+  - Jacalloc API
+security:
+  - authorization:
+      - https://www.googleapis.com/auth/cloud-platform
+      - email
+      - profile
+responses:
+  '200':
+    description: Resource successfully allocated
+  '412':
+    description: No resources are free to allocate
+  '500':
+    description: Resource allocation failed
+parameters:
+  - in: query
+    description: Resource project
+    name: project
+    required: false
+    type: string

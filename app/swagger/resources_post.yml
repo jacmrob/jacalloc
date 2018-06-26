@@ -2,6 +2,13 @@ Creates a new resource
 ---
 tags:
   - Jacalloc API
+security:
+  - authorization:
+      - https://www.googleapis.com/auth/cloud-platform
+      - email
+      - profile
+produces:
+  - application/json
 responses:
   '201':
     description: Resource successfully created
