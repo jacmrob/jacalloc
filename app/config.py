@@ -39,6 +39,8 @@ class GcloudConfig(Config):
 
 class GcloudProjConfig():
     def __init__(self, project_name):
+        print "creating config for project {}".format(project_name)
+        clear_env()
         dotenv.load_dotenv(dotenv.find_dotenv(project_name + ".env"))
         self.compute = create_compute_instance_from_json_creds(os.getenv("SVC_ACCT_PATH"))
         self.zone = os.getenv("ZONE")
@@ -51,3 +53,11 @@ def generate_config(resource_backend):
     else:
         print "[WARN] No resource backend specified, using default config."
         return None
+
+
+def clear_env():
+    keys = ["SVC_ACCT_PATH", "ZONE"]
+    for k in keys:
+        if k in os.environ:
+            del os.environ[k]
+
