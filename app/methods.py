@@ -28,7 +28,6 @@ class ResourceMethods:
             return [x.map() for x in res.all() if x.is_expired(filters['expired'] or 18000)]
         return [x.map() for x in res.all()]
 
-
     def create_resource(self, body):
         resource = Resource(
             name=body['name'],

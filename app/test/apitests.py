@@ -149,11 +149,23 @@ class TestDependentApi(unittest.TestCase):
                 return True
         return False
 
+    def assert_record_is_not_in_list(self, r_list, r_name):
+        for r in r_list:
+            if r["name"] == r_name:
+                return False
+        return True
+
     # GET /resources
     def test_get_resources(self):
         resp = requests.get(self.base_url_resources, headers=self.headers)
         self.assertEqual(resp.status_code, HTTP_OK)
         self.assert_record_is_in_list(resp.json(), self.resource_name)
+
+        # filter by usable - should not be usable
+        listUsable = requests.get(self.base_url_resources, headers=self.headers, params={"usable": True})
+        self.assertEqual(listUsable.status_code, HTTP_OK)
+        self.assert_record_is_not_in_list(resp.json(), self.resource_name)
+
 
     def test_get_resources_bad_proj(self):
         resp = requests.get(self.base_url_resources, headers=self.headers, params={"project": "not-a-real-proj"})
