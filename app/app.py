@@ -122,7 +122,10 @@ def api_health():
 @authorized
 def api_create_resource():
     if request.method == 'GET':
-        resp = resource_methods.get_all_resources(in_use=request.args.get('in_use'), project=request.args.get('project'), private=request.args.get('private'))
+        resp = resource_methods.get_all_resources(in_use=request.args.get('in_use'),
+                                                  project=request.args.get('project'),
+                                                  private=request.args.get('private'),
+                                                  usable=request.args.get('usable'))
         return json.dumps(resp), 200
 
     elif request.method == 'POST':

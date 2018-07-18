@@ -32,3 +32,8 @@ parameters:
     name: private
     required: false
     enum: ["true","false"]
+  - in: query
+    description: if resource is usable
+    name: usable
+    required: false
+    enum: ["true","false"]
