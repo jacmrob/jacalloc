@@ -39,6 +39,9 @@ jobs:
     steps:
       - checkout
       - run:
+          name: docker login
+          command: docker login -u $DOCKER_USER -p $DOCKER_PASS
+      - run:
           name: build docker image
           command: docker build -t jacmrob/jacalloc .
       - run:
