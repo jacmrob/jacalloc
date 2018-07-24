@@ -1,34 +1,14 @@
-from flask import Flask, request, jsonify, abort
+from flask import Flask, request, jsonify, abort, Response
 import json
 import sys
 from sqlalchemy import exc
 from flasgger import Swagger
-from flasgger.utils import swag_from
 from config import generate_config
 from models import db
 from backends.gcloud import validate_token
 
 from methods import generate_resource_methods
 from checkers import generate_request_checker
-
-swagger_template = {
-    # Other settings
-
-    'securityDefinitions': {
-        'authorization': {
-            'type': 'oauth2',
-            'authorizationUrl': 'https://accounts.google.com/o/oauth2/auth',
-            'flow': 'implicit',
-            'scopes': {
-                'https://www.googleapis.com/auth/cloud-platform': 'cloud platform authorization',
-                'email': 'email authorization',
-                'profile': 'profile authorization'
-            }
-        }
-    }
-
-    # Other settings
-}
 
 swagger_config = {
     "headers": [
@@ -50,7 +30,7 @@ swagger_config = {
 
 app = Flask(__name__)
 app.config.from_object('config.Config')
-Swagger(app, config=swagger_config, template=swagger_template)
+Swagger(app, config=swagger_config, template_file='swagger/swagger_template.yml')
 db.init_app(app)
 backend_config = generate_config(app.config['RESOURCE_BACKEND'])
 resource_methods = generate_resource_methods(app.config['RESOURCE_BACKEND'], backend_config)
@@ -103,22 +83,11 @@ def authorized(fn):
 
 @app.route('/')
 def api_health():
-    '''
-    Health check
-    ---
-    tags:
-      - health
-    responses:
-      '200':
-        description: App is running
-    '''
     # TODO: check if can ping db
     return 'Service running!', 200
 
 
 @app.route('/resources', methods=['GET', 'POST'])
-@swag_from('swagger/resources_get.yml', methods=['GET'])
-@swag_from('swagger/resources_post.yml', methods=['POST'])
 @authorized
 def api_create_resource():
     if request.method == 'GET':
@@ -126,7 +95,7 @@ def api_create_resource():
                                                   project=request.args.get('project'),
                                                   private=request.args.get('private'),
                                                   usable=request.args.get('usable'))
-        return json.dumps(resp), 200
+        return Response(json.dumps(resp), mimetype='application/json'), 200
 
     elif request.method == 'POST':
         body = request.get_json()
@@ -143,7 +112,7 @@ def api_create_resource():
                 try:
                     resource_methods.create_resource(body)
                     print "Created record for {0}".format(body['name'])
-                    return json.dumps(body), 201
+                    return jsonify(body), 201
 
                 except:
                     _, exc_value, _ = sys.exc_info()
@@ -156,13 +125,12 @@ def api_create_resource():
 
 
 @app.route('/resources/<name>', methods=['GET'])
-@swag_from('swagger/resources_get_single.yml', methods=['GET'])
 @authorized
 def api_get_resource(name):
     try:
         resp = resource_methods.get_resource_by_name(name, project=request.args.get('project'))
         if resp:
-            return json.dumps(resp.map()), 200
+            return jsonify(resp.map()), 200
 
         else:
             return "Resource not found!", 404
@@ -172,13 +140,12 @@ def api_get_resource(name):
 
 
 @app.route('/resources/name/<keyword>', methods=['GET'])
-@swag_from('swagger/resources_get_on_kwd.yml', methods=['GET'])
 @authorized
 def api_get_by_search(keyword):
     try:
         resp = resource_methods.list_resources_by_keyword(keyword)
         if resp:
-            return json.dumps([x.map() for x in resp.all()]), 200
+            return Response(json.dumps([x.map() for x in resp.all()]), mimetype='application/json'), 200
         else:
             return "No resources found matching regex!", 404
 
@@ -187,7 +154,6 @@ def api_get_by_search(keyword):
 
 
 @app.route('/resources/<name>', methods=['POST'])
-@swag_from('swagger/resources_post_name.yml', methods=['POST'])
 @authorized
 def api_update_resource(name):
     try:
@@ -206,7 +172,7 @@ def api_update_resource(name):
                 try:
                     resource_methods.update_resource(name, body)
                     new = resource_methods.get_resource_by_name(name)
-                    return json.dumps(new.map()), 200
+                    return jsonify(new.map()), 200
                 except:
                     a, exc_value, _ = sys.exc_info()
                     errors = "Unable to update record for {0}: {1}".format(name, exc_value)
@@ -222,7 +188,6 @@ def api_update_resource(name):
 
 
 @app.route('/resources/<name>', methods=['DELETE'])
-@swag_from('swagger/resources_delete.yml', methods=['DELETE'])
 @authorized
 def api_delete_resource(name):
     try:
@@ -234,7 +199,6 @@ def api_delete_resource(name):
 
 
 @app.route('/resources/allocate', methods=['POST'])
-@swag_from('swagger/resources_allocate.yml', methods=['POST'])
 @authorized
 def api_allocate():
 
@@ -245,7 +209,7 @@ def api_allocate():
             allocated = resource_methods.pick_random_resource(free)
             resource_methods.update_resource(allocated['name'], {'in_use': True})
             allocated['in_use'] = True
-            return json.dumps(allocated), 200
+            return jsonify(allocated), 200
         except:
             e = sys.exec_info()[1]
             return str(e), 500
@@ -254,7 +218,6 @@ def api_allocate():
 
 
 @app.route('/resources/allocate/timeout', methods=['GET'])
-@swag_from('swagger/resources_allocate_timeout.yml', methods=['GET'])
 @authorized
 def api_get_timeouts():
     try:
@@ -262,7 +225,7 @@ def api_get_timeouts():
                                                project=request.args.get("project"),
                                                private=request.args.get("private"),
                                                expired=int(request.args.get("timeout")))
-        return json.dumps(r), 200
+        return Response(json.dumps(r), mimetype="application/json"), 200
 
     except:
         _, e, _ = sys.exec_info()

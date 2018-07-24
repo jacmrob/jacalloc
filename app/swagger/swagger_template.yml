@@ -1,0 +1,316 @@
+---
+definitions:
+  Resource:
+    type: object
+    properties:
+      name:
+        type: string
+      ip:
+        type: string
+      project:
+        type: string
+      usable:
+        type: boolean
+      in_use:
+        type: boolean
+      private:
+        type: boolean
+      time_running:
+        type: string
+
+securityDefinitions:
+  authorization:
+    type: 'oauth2'
+    authorizationUrl: 'https://accounts.google.com/o/oauth2/auth'
+    flow: 'implicit'
+    scopes:
+      https://www.googleapis.com/auth/cloud-platform: 'cloud platform authorization'
+      email: 'email authorization'
+      profile: 'profile authorization'
+
+paths:
+  "/":
+    get:
+      description: health check
+      tags:
+        - health
+      responses:
+        200:
+          description: App is running
+
+  "/resources":
+    get:
+      description: Returns a list of Resources
+      tags:
+        - Resources
+      security:
+        - authorization:
+            - https://www.googleapis.com/auth/cloud-platform
+            - email
+            - profile
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Resource"
+        500:
+          description: Problem with request
+      parameters:
+        - in: query
+          description: if resource in use
+          name: in_use
+          type: boolean
+          required: false
+        - in: query
+          description: project resource belongs to
+          name: project
+          required: false
+          type: string
+        - in: query
+          description: if resources is private
+          name: private
+          required: false
+          type: boolean
+        - in: query
+          description: if resource is usable
+          name: usable
+          required: false
+          type: boolean
+    post:
+      description: Creates a new resource
+      tags:
+        - Resources
+      security:
+        - authorization:
+            - https://www.googleapis.com/auth/cloud-platform
+            - email
+            - profile
+      produces:
+        - application/json
+      responses:
+        '201':
+          description: Resource successfully created
+          schema:
+            $ref: "#/definitions/Resource"
+        '400':
+          description: Malformed request
+        '409':
+          description: Resource already exists
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            id: Resource
+            required:
+              - name
+              - ip
+              - project
+              - in_use
+            properties:
+              name:
+                description: Resource name
+                type: string
+              ip:
+                description: Resource ip
+                type: string
+              project:
+                description: Resource project
+                type: string
+              in_use:
+                description: Resource status
+                type: boolean
+              private:
+                description: If resource private
+                type: boolean
+
+  "/resources/{name}":
+    get:
+      description: Gets a single Resource
+      produces:
+        - application/json
+      security:
+        - authorization:
+            - https://www.googleapis.com/auth/cloud-platform
+            - email
+            - profile
+      responses:
+        '200':
+          description: Resource found
+          schema:
+            $ref: "#/definitions/Resource"
+        '404':
+          description: Resource not found
+      parameters:
+        - in: path
+          description: resource name
+          name: name
+          required: true
+          type: string
+        - in: query
+          description: Resource project
+          name: project
+          required: false
+          type: string
+      tags:
+        - Resources
+
+    post:
+      description: Updates a resource
+      tags:
+        - Resources
+      security:
+        - authorization:
+            - https://www.googleapis.com/auth/cloud-platform
+            - email
+            - profile
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Resource successfully updated
+          schema:
+            $ref: "#/definitions/Resource"
+        '400':
+          description: Malformed request
+        '404':
+          description: Resource not found
+      parameters:
+        - in: path
+          description: Resource name
+          name: name
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            properties:
+              ip:
+                type: string
+                description: Resource IP
+              project:
+                type: string
+                description: Resource project
+              in_use:
+                type: boolean
+                description: Resource status
+              usable:
+                type: boolean
+              private:
+                type: boolean
+
+    delete:
+      description: Deletes a resource
+      tags:
+        - Resources
+      security:
+        - authorization:
+            - https://www.googleapis.com/auth/cloud-platform
+            - email
+            - profile
+      responses:
+        '201':
+          description: Resource successfully deleted
+        '500':
+          description: Resource delete failed
+      parameters:
+        - in: path
+          description: Resource name
+          name: name
+          required: true
+          type: string
+
+  "/resources/name/{keyword}":
+    get:
+      description: Lists all Resources on a keyword
+      tags:
+        - Resources
+      security:
+        - authorization:
+            - https://www.googleapis.com/auth/cloud-platform
+            - email
+            - profile
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Resource(s) found matching request
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Resource"
+        '404':
+          description: No resource(s) found matching request
+        '400':
+          description: Resource request malformed
+      parameters:
+        - in: path
+          description: keyword to search on
+          name: keyword
+          required: true
+          type: string
+
+  "/resources/allocate":
+    post:
+      description: Allocates a resource
+      summary: Chooses a random resource where in_use == False and sets in_use = True
+      tags:
+        - Resources
+      security:
+        - authorization:
+            - https://www.googleapis.com/auth/cloud-platform
+            - email
+            - profile
+      responses:
+        '200':
+          description: Resource successfully allocated
+        '412':
+          description: No resources are free to allocate
+        '500':
+          description: Resource allocation failed
+      parameters:
+        - in: query
+          description: Resource project
+          name: project
+          required: false
+          type: string
+
+  "/resources/allocate/timeout":
+    get:
+      description: Lists all resources that have been running longer than the given time block
+      tags:
+        - Resources
+      security:
+        - authorization:
+            - https://www.googleapis.com/auth/cloud-platform
+            - email
+            - profile
+      responses:
+        '200':
+          description: List of resources
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Resource"
+        '500':
+          description: Something went wrong during fetch
+      parameters:
+        - in: query
+          description: Resource project
+          name: project
+          required: false
+          type: string
+        - in: query
+          description: If resource private
+          name: private
+          required: false
+          type: boolean
+        - in: query
+          description: Amount of time (in seconds) in_use to filter resources by
+          name: timeout
+          required: false
+          type: integer
+          minimum: 1
