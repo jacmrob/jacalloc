@@ -21,7 +21,7 @@ def create_compute_instance_from_json_creds(creds_json):
 
 
 def create_instance(compute, project, zone, name, tags, disk_size="100", disk_type="pd-ssd", machine_type="n1-standard-8"):
-    image_response = compute.image().get(
+    image_response = compute.images().get(
         project='ubuntu-os-cloud', image='ubuntu-1604-xenial-v20210928').execute()
     source_disk_image = image_response['selfLink']
     network = 'managed' if project == 'broad-dsde-dev' else 'default'
