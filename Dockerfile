@@ -4,4 +4,6 @@ FROM jacmrob/jacalloc
 # We'll be replacing jacalloc with Sherlock soon, so this Dockerfile simply patches
 # the existing Docker image with our local updates to jacalloc's files.
 
+# (see Dockerfile.original for the original Dockerfile)
+
 COPY app /app
