@@ -1,10 +1,7 @@
-FROM python:2.7
+FROM jacmrob/jacalloc
 
-WORKDIR /app
+# The jacalloc image is so outdated at this point that installing dependencies no longer works.
+# We'll be replacing jacalloc with Sherlock soon, so this Dockerfile simply patches
+# the existing Docker image with our local updates to jacalloc's files.
+
 COPY app /app
-COPY requirements.txt /app
-
-RUN pip install -r requirements.txt
-
-ENTRYPOINT [ "python" ]
-CMD [ "app.py" ]
